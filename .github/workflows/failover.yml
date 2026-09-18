@@ -1,0 +1,79 @@
+# Relais si le VPS agk-core s'arrête (ou est supprimé) : GitHub reprend la mise à jour du radar.
+# Ne fait rien tant que le VPS publie : le job s'arrête dès qu'il voit des données fraîches en ligne.
+name: Relais (si le VPS ne publie plus)
+
+on:
+  schedule:
+    - cron: "37 * * * *"      # une fois par heure, décalé des passages du VPS
+  workflow_dispatch:           # « Run workflow » pour forcer un passage à la main
+    inputs:
+      force:
+        description: "Forcer même si le VPS publie encore"
+        type: boolean
+        default: false
+
+concurrency:
+  group: jev-radar-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+
+      - name: Le VPS publie-t-il encore ?
+        id: check
+        run: |
+          age=$(curl -s "https://jev.agentik-os.com/data/meta.json?t=$(date +%s)" \
+            | python3 -c 'import json,sys,time; print(int(time.time()-json.load(sys.stdin)["updated"]))' 2>/dev/null || echo 999999)
+          echo "Données en ligne : $((age/60)) min"
+          if [ "${{ inputs.force }}" != "true" ] && [ "$age" -lt 4200 ]; then
+            echo "run=false" >> $GITHUB_OUTPUT
+            echo "✅ Le VPS publie encore (moins de 70 min) : rien à faire." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "run=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Données vieilles de $((age/60)) min : GitHub prend le relais." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Outils (ffmpeg pour les transcriptions)
+        if: steps.check.outputs.run == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - uses: astral-sh/setup-uv@v5
+        if: steps.check.outputs.run == 'true'
+        with: { enable-cache: true }
+
+      - name: Passage complet
+        if: steps.check.outputs.run == 'true'
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        working-directory: pipeline
+        run: |
+          set -e
+          uv run --project .. python replies.py || true
+          uv run --project .. --extra ci python crawl.py
+          uv run --project .. --extra ci python transcribe.py || true
+          uv run --project .. python analyze.py
+          uv run --project .. python ideas_eval.py
+          uv run --project .. python build.py
+          uv run --project .. python publish.py
+
+      - name: Sauvegarde des données
+        if: steps.check.outputs.run == 'true'
+        run: |
+          git config user.name "Jev Radar bot (GitHub)"
+          git config user.email "bot@agentik-os.com"
+          git add -A data site api
+          git diff --cached --quiet || git commit -q -m "data: relais GitHub $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3; do
+            git push -q && break
+            git pull --rebase --quiet -X theirs || git rebase --abort || true
+          done
+          echo "Site republié depuis GitHub." >> $GITHUB_STEP_SUMMARY
