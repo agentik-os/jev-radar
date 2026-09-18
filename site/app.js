@@ -137,8 +137,8 @@ const T = {
 };
 const L = {
   category: {
-    en: { build_demo: "Build / demo", integration: "Integration", explainer: "Explainer", news: "News", opinion: "Opinion", critique: "Critique", official: "Official TypeSafe", meme: "Meme", question: "Question" },
-    fr: { build_demo: "Démo / construit", integration: "Intégration", explainer: "Explication", news: "Actu", opinion: "Avis", critique: "Critique", official: "Officiel TypeSafe", meme: "Mème", question: "Question" },
+    en: { pending: "New · classifying…", build_demo: "Build / demo", integration: "Integration", explainer: "Explainer", news: "News", opinion: "Opinion", critique: "Critique", official: "Official TypeSafe", meme: "Meme", question: "Question" },
+    fr: { pending: "Nouveau · en cours de classement", build_demo: "Démo / construit", integration: "Intégration", explainer: "Explication", news: "Actu", opinion: "Avis", critique: "Critique", official: "Officiel TypeSafe", meme: "Mème", question: "Question" },
   },
   domain: {
     en: { marketing_ads: "Marketing & ads", social_content: "Social & content", sales_leads: "Sales & leads", coding_devtools: "Code & dev tools", agents_browser: "Agents & browser", games: "Games", trading_finance: "Trading & finance", support_email: "Support & email", search_rag: "Search & RAG", safety_moderation: "Safety & moderation", data_classification: "Data classification", ux_personalization: "UX & personalization", research_science: "Research & benchmarks", general: "General" },

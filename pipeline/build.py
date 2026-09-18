@@ -119,8 +119,12 @@ def main():
     cls = read_json(DATA / "classified.json", {})
     transcripts = read_json(DATA / "transcripts.json", {})
     systems = read_json(DATA.parent / "pipeline/systems.json", {})
-    posts = [compact(t, cls[pid], transcripts, systems) for pid, t in raw.items()
-             if pid in cls and cls[pid]["about_jev"] >= 0.5 and cls[pid]["category"] != "unrelated"]
+    # un post pas encore classé par Jev (crédits épuisés, API indisponible…) s'affiche quand même, étiqueté « pending »
+    pending = {"about_jev": 1.0, "category": "pending", "domain": "general", "pattern": "none", "niche": "none",
+               "sentiment": 2.0, "depth": 0.0, "passive_potential": 0.0, "demand_signal": 0.0, "commercial": 0.0,
+               "working_demo": 0.0, "open_source": 0.0, "numbers": 0.0, "vs_llm": 0.0, "self_promo": 0.0}
+    posts = [compact(t, cls.get(pid, pending), transcripts, systems) for pid, t in raw.items()
+             if pid not in cls or (cls[pid]["about_jev"] >= 0.5 and cls[pid]["category"] != "unrelated")]
     posts.sort(key=lambda p: -p["m"][4])
 
     board = niche_board(posts, now)
