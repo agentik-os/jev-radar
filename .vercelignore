@@ -1,0 +1,9 @@
+.venv
+data
+pipeline
+og
+logs
+*.md
+pyproject.toml
+uv.lock
+run.sh
