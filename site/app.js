@@ -159,8 +159,7 @@ function setTheme(th) {
   document.documentElement.dataset.theme = th;
   try { localStorage.setItem("jr_theme", th); } catch {}
 }
-// clair par défaut, comme typesafe.ai ; le choix du visiteur est mémorisé
-try { setTheme(localStorage.getItem("jr_theme") || "light"); } catch { setTheme("light"); }
+try { const th = localStorage.getItem("jr_theme"); if (th) setTheme(th); else if (matchMedia("(prefers-color-scheme: light)").matches) setTheme("light"); } catch {}
 
 // ---------------------------------------------------------------- utilitaires
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -894,7 +893,7 @@ function mapTree() {
     ],
   };
 }
-const MM_COLORS = ["#d45bb6", "#f386a1", "#8cc8f0", "#f5b76b", "#abbab9", "#ff6b6b", "#5fd49a", "#b0368f"];
+const MM_COLORS = ["#ffb547", "#ff6fb5", "#5ad7ff", "#c5f82a", "#a78bfa", "#ff6b5b", "#4ade80", "#f59e0b"];
 let mmOpen = new Set(["root", "0", "1", "2", "3"]);
 function pageMap() {
   view.innerHTML = `<div class="page-head"><h1>${t("map_title")}</h1><p>${t("map_lead")}</p></div><div class="mm-wrap" id="mm"></div>`;
@@ -926,7 +925,7 @@ function drawMap() {
     }).join("")}
     ${nodes.map(n => {
       const has = n.children?.length, open = mmOpen.has(n.path);
-      if (n.depth === 0) return `<g class="mm-node mm-root" data-path="root"><rect x="${n.x - 6}" y="${n.y - 20}" width="80" height="40" rx="10"/><text x="${n.x + 34}" y="${n.y + 6}" text-anchor="middle" style="font:600 22px 'Host Grotesk';fill:var(--acc)">Jev</text></g>`;
+      if (n.depth === 0) return `<g class="mm-node mm-root" data-path="root"><rect x="${n.x - 6}" y="${n.y - 20}" width="80" height="40" rx="10"/><text x="${n.x + 34}" y="${n.y + 6}" text-anchor="middle" style="font:italic 24px 'Instrument Serif';fill:var(--acc)">Jev</text></g>`;
       return `<g class="mm-node" data-path="${n.path}" ${n.post ? `data-mpost="${n.post}"` : ""} ${n.go ? `data-mgo="${n.go}"` : ""} ${n.href ? `data-mhref="${esc(n.href)}"` : ""}>
         <rect x="${n.x - 8}" y="${n.y - 14}" width="${tw(n)}" height="28" fill="transparent"/>
         <text class="lbl" x="${n.x}" y="${n.y + 4}" ${n.depth === 1 ? 'style="font-weight:600"' : ""}>${esc(n.label.length > 48 ? n.label.slice(0, 47) + "…" : n.label)}${n.count != null ? `<tspan class="cnt" dx="8">${n.count}</tspan>` : ""}</text>
