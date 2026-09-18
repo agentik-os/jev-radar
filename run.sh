@@ -12,7 +12,8 @@ commit_local() {  # garde l'état localement (sans pousser) pour que le prochain
   git add -A data site api
   git diff --cached --quiet || git commit -q -m "data: état $MODE $(date -u +%Y-%m-%dT%H:%MZ) (local)"
 }
-git pull --rebase --quiet
+commit_local            # un reste non enregistré (publication manuelle…) ne doit jamais bloquer le pull
+git pull --rebase --quiet -X theirs
 cd pipeline
 if [ "$MODE" = live ]; then
   # toutes les 3 min : comptes chauds, classement des seuls nouveaux posts, publication Blob (pas de push GitHub)
