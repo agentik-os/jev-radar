@@ -4,7 +4,7 @@ Pas de recherche X sans compte : on suit un réseau de comptes (seeds.txt + tous
 découverts). Les comptes qui ont déjà parlé de Jev sont relus à chaque passage, les autres
 toutes les 6 h. Chaque nouveau post ajoute à la file son auteur, les comptes cités/mentionnés et
 les posts liés. Les métriques des posts récents et des plus vus sont rafraîchies."""
-import json, re, time, urllib.parse
+import json, re, sys, time, urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 
 from common import DATA, LAUNCH, PIPE, get_json, load_posts, read_json, save_posts, write_json
@@ -21,6 +21,11 @@ REFRESH_TOP = 250             # posts les plus vus dont on rafraîchit les métr
 REFRESH_EVERY = 6 * 3600
 MAX_NEW_ACCOUNTS = 400        # nouveaux comptes explorés par passage
 STATE = DATA / "crawl_state.json"
+# passage rapide (toutes les 15 min) : seulement les comptes actifs sur Jev ces derniers jours, 1 page chacun
+FAST = "--fast" in sys.argv
+FAST_ACTIVE_DAYS = 4
+FAST_NEW_ACCOUNTS = 60
+FAST_ALWAYS = {"typesafeai", "completeskeptic", "openrouter", "vercel"}
 
 
 def blob(t):
@@ -106,9 +111,13 @@ def main():
     for t in posts.values():
         if t.get("created_timestamp", 0) >= now - OVERLAP:
             pending |= links(t)[0]
+    last_jev = {}
+    for t in posts.values():
+        k = ((t.get("author") or {}).get("screen_name") or "").lower()
+        last_jev[k] = max(last_jev.get(k, 0), t.get("created_timestamp", 0))
 
     with ThreadPoolExecutor(8) as pool:
-        rnd, new_budget = 0, MAX_NEW_ACCOUNTS
+        rnd, new_budget = 0, (FAST_NEW_ACCOUNTS if FAST else MAX_NEW_ACCOUNTS)
         while True:
             rnd += 1
             ids = [p for p in pending if p[1] not in seen_ids and p[1] not in posts]
@@ -123,13 +132,17 @@ def main():
                     if new_budget > 0:
                         new_budget -= 1
                         jobs.append((a["handle"], LAUNCH, MAX_PAGES_NEW))
+                elif rnd == 1 and FAST:
+                    if k in FAST_ALWAYS or now - last_jev.get(k, 0) < FAST_ACTIVE_DAYS * 86400:
+                        jobs.append((a["handle"], now - OVERLAP, 1))
                 elif rnd == 1 and (a["jev_posts"] > 0 or now - a["last_checked"] > IDLE_RECHECK):
                     jobs.append((a["handle"], max(LAUNCH, a["last_checked"] - OVERLAP), MAX_PAGES_KNOWN))
             if not jobs and not pending:
                 break
             for handle, found, ok in pool.map(timeline, jobs):
                 a = accounts[handle.lower()]
-                a["last_checked"] = now  # même en échec (compte suspendu, privé…) : on réessaiera dans 6 h
+                if not FAST or a["last_checked"] == 0:  # le passage rapide ne décale pas la relecture complète
+                    a["last_checked"] = now  # même en échec (compte suspendu, privé…) : on réessaiera dans 6 h
                 a["failed"] = not ok
                 for t in found:
                     if keep(t):
@@ -139,10 +152,10 @@ def main():
                     for h in hs:
                         add_account(h)
             print(f"tour {rnd}: {len(ids)} posts liés, {len(jobs)} comptes lus, total {len(posts)} (+{added})", flush=True)
-            if rnd > 8:
+            if rnd > (3 if FAST else 8):
                 break
 
-        if now - st.get("last_refresh", 0) > REFRESH_EVERY:
+        if not FAST and now - st.get("last_refresh", 0) > REFRESH_EVERY:
             top = sorted(posts.values(), key=lambda t: -(t.get("views") or 0))[:REFRESH_TOP]
             for t in pool.map(status, [((x.get("author") or {}).get("screen_name"), x["id"]) for x in top]):
                 if t and t.get("id") in posts:
@@ -157,7 +170,8 @@ def main():
         if k in accounts:
             accounts[k]["jev_posts"] += 1
     save_posts(posts)
-    st.update(accounts=accounts, seen_ids=sorted(seen_ids)[-20000:], last_run=now)
+    st.update(accounts=accounts, seen_ids=sorted(seen_ids)[-20000:], **({"last_fast": now} if FAST else {"last_run": now}))
+    (DATA / "last_crawl_new.txt").write_text(str(added))
     write_json(STATE, st)
     print(f"collecte : {len(posts)} posts (+{added} nouveaux, {updated} mis à jour), "
           f"{len(accounts)} comptes suivis, {time.time()-t0:.0f}s")
