@@ -34,6 +34,9 @@ cd ..
 git add -A data site api
 if ! git diff --cached --quiet; then
   git commit -q -m "data: mise à jour $MODE $(date -u +%Y-%m-%dT%H:%MZ)"
-  git push -q
-  echo "poussé"
 fi
+# pousse aussi les commits locaux en attente ; si le dépôt distant a bougé, on rebase et on réessaie
+for i in 1 2 3; do
+  if git push -q 2>/dev/null; then echo "poussé"; break; fi
+  git pull --rebase --quiet -X theirs || { git rebase --abort 2>/dev/null; echo "conflit git"; exit 1; }
+done
