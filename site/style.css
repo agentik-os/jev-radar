@@ -409,3 +409,12 @@ body { font-family: var(--sans); letter-spacing: -.005em;
 .hero-search { border-color: var(--ink); box-shadow: 4px 4px 0 rgba(30, 30, 30, .1); }
 mark { background: color-mix(in srgb, var(--pink) 45%, transparent); }
 .eyebrow { color: var(--acc); }
+
+/* ---------- aperçus vidéo & direct ---------- */
+.media.vid video { width: 100%; height: 100%; object-fit: cover; display: block; background: #000; }
+.media .live-dot { position: absolute; left: 8px; top: 8px; font: 10px var(--mono); background: rgba(0, 0, 0, .6); color: #fff; border-radius: 3px; padding: 2px 6px; }
+.post { position: relative; }
+.post.fresh { border-color: var(--acc); box-shadow: 0 0 0 2px var(--acc-soft), 4px 4px 0 var(--acc-soft); }
+.fresh-badge { position: absolute; top: -9px; right: 12px; font: 600 10.5px var(--mono); background: var(--acc); color: var(--acc-ink); padding: 2px 7px; border-radius: 3px; animation: blink 1.6s infinite; }
+.live-banner { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 40; background: var(--acc); color: var(--acc-ink); border: 0; border-radius: 99px; padding: 9px 18px; font: 600 14px var(--sans); cursor: pointer; box-shadow: 0 10px 30px -8px var(--acc); }
+.live-toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 40; background: var(--ink); color: var(--bg); border-radius: 4px; padding: 9px 16px; font: 13px var(--mono); }

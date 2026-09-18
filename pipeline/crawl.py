@@ -22,7 +22,10 @@ REFRESH_EVERY = 6 * 3600
 MAX_NEW_ACCOUNTS = 400        # nouveaux comptes explorés par passage
 STATE = DATA / "crawl_state.json"
 # passage rapide (toutes les 15 min) : seulement les comptes actifs sur Jev ces derniers jours, 1 page chacun
-FAST = "--fast" in sys.argv
+HOT = "--hot" in sys.argv          # passage « live » (toutes les 3 min) : les comptes les plus chauds seulement
+FAST = "--fast" in sys.argv or HOT
+HOT_DAYS = 2
+HOT_MAX_ACCOUNTS = 250
 FAST_ACTIVE_DAYS = 4
 FAST_NEW_ACCOUNTS = 60
 FAST_ALWAYS = {"typesafeai", "completeskeptic", "openrouter", "vercel"}
@@ -117,7 +120,11 @@ def main():
         last_jev[k] = max(last_jev.get(k, 0), t.get("created_timestamp", 0))
 
     with ThreadPoolExecutor(8) as pool:
-        rnd, new_budget = 0, (FAST_NEW_ACCOUNTS if FAST else MAX_NEW_ACCOUNTS)
+        rnd, new_budget = 0, (10 if HOT else FAST_NEW_ACCOUNTS if FAST else MAX_NEW_ACCOUNTS)
+        hot = set()
+        if HOT:
+            recent = sorted((k for k, ts in last_jev.items() if now - ts < HOT_DAYS * 86400), key=lambda k: -last_jev[k])
+            hot = set(recent[:HOT_MAX_ACCOUNTS]) | FAST_ALWAYS
         while True:
             rnd += 1
             ids = [p for p in pending if p[1] not in seen_ids and p[1] not in posts]
@@ -133,7 +140,7 @@ def main():
                         new_budget -= 1
                         jobs.append((a["handle"], LAUNCH, MAX_PAGES_NEW))
                 elif rnd == 1 and FAST:
-                    if k in FAST_ALWAYS or now - last_jev.get(k, 0) < FAST_ACTIVE_DAYS * 86400:
+                    if (k in hot) if HOT else (k in FAST_ALWAYS or now - last_jev.get(k, 0) < FAST_ACTIVE_DAYS * 86400):
                         jobs.append((a["handle"], now - OVERLAP, 1))
                 elif rnd == 1 and (a["jev_posts"] > 0 or now - a["last_checked"] > IDLE_RECHECK):
                     jobs.append((a["handle"], max(LAUNCH, a["last_checked"] - OVERLAP), MAX_PAGES_KNOWN))
@@ -152,7 +159,7 @@ def main():
                     for h in hs:
                         add_account(h)
             print(f"tour {rnd}: {len(ids)} posts liés, {len(jobs)} comptes lus, total {len(posts)} (+{added})", flush=True)
-            if rnd > (3 if FAST else 8):
+            if rnd > (2 if HOT else 3 if FAST else 8):
                 break
 
         if not FAST and now - st.get("last_refresh", 0) > REFRESH_EVERY:

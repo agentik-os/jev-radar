@@ -13,7 +13,7 @@ const T = {
     search_short: "Search", join: "Join Discord", follow: "Follow",
     hero_live: (m, n) => `LIVE · updated ${m} · ${n} posts tracked`,
     hero_h: "Everything happening with <em>Jev</em>, live.",
-    hero_p: "Every post, demo, integration and debate about TypeSafe's System One model on X. Classified by Jev itself, refreshed every hour, with a leaderboard of the businesses worth building.",
+    hero_p: "Every post, demo, integration and debate about TypeSafe's System One model on X. Classified by Jev itself and updated live, every few minutes, with a leaderboard of the businesses worth building.",
     hero_search: "Search posts, people, demos, transcripts, ideas…",
     k_posts: "posts", k_people: "people", k_views: "views", k_builds: "builds & demos", k_videos: "videos", k_code: "open source / free tools",
     trending: "Trending <em>now</em>", trending_p: "The most engaging posts of the last 24 hours.",
@@ -54,7 +54,7 @@ const T = {
     followers: "followers", jposts: n => `${n} post${n > 1 ? "s" : ""} about Jev`, reach: "reach",
     foot_about: "An unofficial, independent tracker of everything said about Jev on X. Not affiliated with TypeSafe AI. Posts belong to their authors and link back to X.",
     foot_method: "Method", foot_community: "Community",
-    foot_method_txt: "Public posts are collected every hour from a growing network of accounts, videos are transcribed, and each post is classified by Jev itself: type, domain, system pattern, niche and business signals.",
+    foot_method_txt: "Public posts are collected live (every 3 minutes for active accounts, hourly for the whole network), videos are transcribed, and each post is classified by Jev itself: type, domain, system pattern, niche and business signals.",
     builders: "builders", in48: "in 48 h",
     nav_money: "Money now",
     money_eyebrow: "Money now", money_title: "Make money with Jev <em>this week</em>",
@@ -76,7 +76,7 @@ const T = {
     search_short: "Rechercher", join: "Rejoindre le Discord", follow: "Suivre",
     hero_live: (m, n) => `EN DIRECT · mis à jour ${m} · ${n} posts suivis`,
     hero_h: "Tout ce qui se passe autour de <em>Jev</em>, en direct.",
-    hero_p: "Chaque post, démo, intégration et débat sur le modèle System One de TypeSafe sur X. Classé par Jev lui-même, rafraîchi toutes les heures, avec un classement des business à construire.",
+    hero_p: "Chaque post, démo, intégration et débat sur le modèle System One de TypeSafe sur X. Classé par Jev lui-même et mis à jour en direct, toutes les quelques minutes, avec un classement des business à construire.",
     hero_search: "Chercher des posts, personnes, démos, transcriptions, idées…",
     k_posts: "posts", k_people: "personnes", k_views: "vues", k_builds: "démos & systèmes", k_videos: "vidéos", k_code: "open source / outils gratuits",
     trending: "En ce <em>moment</em>", trending_p: "Les posts les plus engageants des dernières 24 heures.",
@@ -117,7 +117,7 @@ const T = {
     followers: "abonnés", jposts: n => `${n} post${n > 1 ? "s" : ""} sur Jev`, reach: "audience",
     foot_about: "Un suivi indépendant et non officiel de tout ce qui se dit sur Jev sur X. Aucun lien avec TypeSafe AI. Les posts appartiennent à leurs auteurs et renvoient vers X.",
     foot_method: "Méthode", foot_community: "Communauté",
-    foot_method_txt: "Les posts publics sont collectés chaque heure depuis un réseau de comptes qui s'agrandit, les vidéos sont transcrites, et chaque post est classé par Jev lui-même : type, domaine, système, niche et signaux business.",
+    foot_method_txt: "Les posts publics sont collectés en direct (toutes les 3 minutes pour les comptes actifs, chaque heure pour tout le réseau), les vidéos sont transcrites, et chaque post est classé par Jev lui-même : type, domaine, système, niche et signaux business.",
     builders: "builders", in48: "en 48 h",
     nav_money: "Money now",
     money_eyebrow: "Money now", money_title: "Gagne de l'argent avec Jev <em>cette semaine</em>",
@@ -185,9 +185,11 @@ const ICON = {
 // ---------------------------------------------------------------- données
 let POSTS = [], MAIN = [], NICHES = [], IDEAS = [], PLAYS = [], META = {}, BYID = new Map(), AUTHORS = [], INDEX = [];
 
-async function load() {
-  view.innerHTML = `<div class="skeleton">loading the radar…</div>`;
-  const get = u => fetch(u, { cache: "no-cache" }).then(r => r.json());
+async function load(quiet = false) {
+  if (!quiet) view.innerHTML = `<div class="skeleton">loading the radar…</div>`;
+  const bust = quiet ? `?t=${Date.now()}` : "";
+  const get = u => fetch(u + bust, { cache: "no-cache" }).then(r => r.json());
+  BYID = new Map();
   [POSTS, NICHES, IDEAS, META, PLAYS] = await Promise.all([get("/data/posts.json"), get("/data/niches.json"), get("/data/ideas.json"), get("/data/meta.json"), get("/data/plays.json").catch(() => [])]);
   MAIN = POSTS.filter(p => !p.r);
   POSTS.forEach(p => BYID.set(p.id, p));
@@ -313,8 +315,9 @@ $("#openSearch").onclick = () => openSearch();
 // ---------------------------------------------------------------- cartes
 function mediaBlock(p) {
   if (p.v.length) {
+    // aperçu : version légère, muette, en boucle, lancée seulement quand la carte est visible
     const v = p.v[0];
-    return `<div class="media"><img src="${esc(v.th)}" alt="" loading="lazy"><div class="play"><span>${ICON.play}</span></div>${v.d ? `<span class="dur">${Math.floor(v.d / 60)}:${String(v.d % 60).padStart(2, "0")}</span>` : ""}</div>`;
+    return `<div class="media vid"><video muted loop playsinline preload="${v.th ? "none" : "metadata"}" ${v.th ? `poster="${esc(v.th)}"` : ""} data-src="${esc(v.s || v.u)}"></video><span class="live-dot">▶</span>${v.d ? `<span class="dur">${Math.floor(v.d / 60)}:${String(v.d % 60).padStart(2, "0")}</span>` : ""}</div>`;
   }
   if (p.ph.length) return `<div class="media"><img src="${esc(p.ph[0])}" alt="" loading="lazy">${p.ph.length > 1 ? `<span class="cnt">+${p.ph.length - 1}</span>` : ""}</div>`;
   if (p.ar) return `<div class="art">${p.ar.co ? `<img src="${esc(p.ar.co)}" alt="" loading="lazy">` : ""}<div>📄 ${esc(p.ar.ti)}</div></div>`;
@@ -329,9 +332,11 @@ function tagsOf(p) {
   tags.push(`<span class="tag ${s <= 1 ? "neg" : s >= 3 ? "pos" : ""}">${SENT[lang][s]}</span>`);
   return `<div class="tags">${tags.join("")}</div>`;
 }
+const FRESH = new Map(); // id -> heure d'arrivée en direct
 function card(p, opts = {}) {
   const q = opts.q || "";
-  return `<article class="post" data-post="${p.id}">
+  const fresh = FRESH.has(p.id) && Date.now() - FRESH.get(p.id) < 15 * 60_000;
+  return `<article class="post${fresh ? " fresh" : ""}" data-post="${p.id}">${fresh ? `<span class="fresh-badge">● NEW</span>` : ""}
     <div class="who"><img src="${esc(p.a.av)}" alt="" loading="lazy"><div class="nm"><b>${hl(p.a.n, q)}</b><span>@${esc(p.a.h)} · ${fmtN(p.a.f)} ${t("followers")} · ${fmtDate(p.c)}</span></div>${opts.rank ? `<span class="rank-badge">#${p.rk}</span>` : ""}</div>
     ${p.sys ? `<div class="sys"><b>${t("system")}</b>${esc(p.sys[lang] || p.sys.en)}</div>` : ""}
     <div class="ptext">${hl(p.t, q)}</div>
@@ -458,7 +463,7 @@ function pageHome() {
   ];
   view.innerHTML = `
   <section class="hero">
-    <span class="live">${T[lang].hero_live(T[lang].ago(now() - META.updated), META.posts.toLocaleString(lang))}</span>
+    <span class="live" id="liveLabel">${T[lang].hero_live(T[lang].ago(now() - META.updated), META.posts.toLocaleString(lang))}</span>
     <h1>${t("hero_h")}</h1>
     <p class="lead">${t("hero_p")}</p>
     <div class="hero-search" id="heroSearch">
@@ -1003,6 +1008,60 @@ $("#theme").onclick = () => setTheme(document.documentElement.dataset.theme === 
 
 // bouton Discord flottant
 document.body.insertAdjacentHTML("beforeend", `<a class="discord-btn float-discord" href="${CFG.discord}" target="_blank" rel="noopener">${ICON.discord}<span>${t("join")}</span></a>`);
+
+// ---------------------------------------------------------------- direct : nouveaux posts sans recharger
+let liveBanner = null;
+function liveAgo() {
+  const el = $("#liveLabel");
+  if (el && META.updated) el.textContent = T[lang].hero_live(T[lang].ago(now() - META.updated), META.posts.toLocaleString(lang));
+}
+async function checkLive() {
+  try {
+    const m = await fetch(`/data/meta.json?t=${Date.now()}`, { cache: "no-store" }).then(r => r.json());
+    if (!m.updated || m.updated <= META.updated) return liveAgo();
+    const before = new Set(POSTS.map(p => p.id));
+    await load(true);
+    const added = MAIN.filter(p => !before.has(p.id));
+    added.forEach(p => FRESH.set(p.id, Date.now()));
+    liveAgo();
+    if (!added.length) return;
+    const r = (location.pathname.split("/")[1] || "home");
+    const calm = window.scrollY < 300 && modal.hidden && layer.hidden && ["home", "all"].includes(r) && !document.activeElement?.matches?.("input,textarea");
+    if (calm) { route(); return flash(added.length); }
+    showLiveBanner(added.length);
+  } catch {}
+}
+function flash(n) {
+  const el = document.createElement("div");
+  el.className = "live-toast";
+  el.textContent = lang === "fr" ? `● ${n} nouveau${n > 1 ? "x" : ""} post${n > 1 ? "s" : ""} en direct` : `● ${n} new post${n > 1 ? "s" : ""}, live`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+function showLiveBanner(n) {
+  liveBanner?.remove();
+  liveBanner = document.createElement("button");
+  liveBanner.className = "live-banner";
+  liveBanner.textContent = lang === "fr" ? `● ${n} nouveau${n > 1 ? "x" : ""} post${n > 1 ? "s" : ""} · voir` : `● ${n} new post${n > 1 ? "s" : ""} · show`;
+  liveBanner.onclick = () => { liveBanner.remove(); liveBanner = null; window.scrollTo({ top: 0 }); route(); };
+  document.body.appendChild(liveBanner);
+}
+setInterval(checkLive, 60_000);
+setInterval(liveAgo, 30_000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkLive(); });
+
+// aperçus vidéo : lecture quand ≥ 60 % de la carte est visible, pause sinon
+const vidObs = new IntersectionObserver(entries => {
+  for (const e of entries) {
+    const v = e.target;
+    if (e.isIntersecting && e.intersectionRatio >= 0.6) {
+      if (!v.src && v.dataset.src) v.src = v.dataset.src;
+      v.play().catch(() => {});
+    } else v.pause();
+  }
+}, { threshold: [0, 0.6] });
+new MutationObserver(() => $$("video[data-src]:not([data-obs])").forEach(v => { v.dataset.obs = 1; vidObs.observe(v); }))
+  .observe(document.body, { childList: true, subtree: true });
 
 load().then(() => { applyLang(); route(); }).catch(err => {
   view.innerHTML = `<div class="empty">Could not load data. ${esc(err.message)}</div>`;

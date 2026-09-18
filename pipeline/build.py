@@ -19,6 +19,12 @@ from niches import NICHES
 WEIGHTS = {"passive": 0.30, "traction": 0.25, "demand": 0.20, "momentum": 0.15, "space": 0.10}
 
 
+def small_mp4(v):
+    """Version mp4 la plus légère (aperçu en boucle dans les cartes) ; la vidéo complète reste dans `u`."""
+    mp4 = [f for f in v.get("formats") or [] if f.get("container") == "mp4" and f.get("url")]
+    return min(mp4, key=lambda f: f.get("bitrate") or 1e12)["url"] if mp4 else v.get("url")
+
+
 def compact(t, j, transcripts, systems):
     a, q, ar, m = t.get("author") or {}, t.get("quote") or {}, t.get("article") or {}, t.get("media") or {}
     facets = (t.get("raw_text") or {}).get("facets") or []
@@ -27,7 +33,8 @@ def compact(t, j, transcripts, systems):
         "a": {"h": a.get("screen_name"), "n": a.get("name"), "f": a.get("followers") or 0, "av": a.get("avatar_url")},
         "t": t.get("text") or "", "r": bool(t.get("replying_to")),
         "ph": [x["url"] for x in m.get("photos") or []],
-        "v": [{"u": v["url"], "th": v.get("thumbnail_url"), "d": round(v.get("duration") or 0)} for v in m.get("videos") or []],
+        "v": [{"u": v["url"], "s": small_mp4(v), "th": v.get("thumbnail_url"), "d": round(v.get("duration") or 0),
+               "w": v.get("width"), "h": v.get("height")} for v in m.get("videos") or []],
         "lk": [f["replacement"] for f in facets if f.get("type") == "url" and f.get("replacement")],
         "m": [t.get(k) or 0 for k in ("likes", "reposts", "replies", "bookmarks", "views")],
         "j": {k: (round(v, 2) if isinstance(v, float) else v) for k, v in j.items() if not k.endswith("_conf")},
