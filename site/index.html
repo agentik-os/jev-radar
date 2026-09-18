@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jev Radar</title>
+<meta name="description" content="Everything happening around Jev, TypeSafe's System One model: every post, demo, integration and debate on X, classified by Jev itself and updated every hour.">
+<meta property="og:title" content="Jev Radar: everything happening with Jev, live">
+<meta property="og:description" content="Every post, demo and integration about TypeSafe's Jev on X, classified by Jev and updated hourly. Plus a leaderboard of the niches worth building.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://jev.agentik-os.com">
+<meta property="og:image" content="https://jev.agentik-os.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#09090b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%2309090b'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23c5f82a' stroke-width='1.5' opacity='.5'/%3E%3Ccircle cx='16' cy='16' r='5' fill='none' stroke='%23c5f82a' stroke-width='1.5' opacity='.8'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23c5f82a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#/" aria-label="Jev Radar">
+      <span class="radar"><i></i><i></i><b></b></span>
+      <span>Jev <em>Radar</em></span>
+    </a>
+    <nav class="tabs" id="tabs">
+      <a href="#/" data-r="home" data-i18n="nav_home">Live</a>
+      <a href="#/builds" data-r="builds" data-i18n="nav_builds">Builds</a>
+      <a href="#/opportunities" data-r="opportunities" data-i18n="nav_opps">Opportunities</a>
+      <a href="#/top" data-r="top" data-i18n="nav_top">Top 100</a>
+      <a href="#/people" data-r="people" data-i18n="nav_people">People</a>
+      <a href="#/all" data-r="all" data-i18n="nav_all">Everything</a>
+    </nav>
+    <button class="search-btn" id="openSearch" aria-label="Search">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="m21 21-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>
+      <span data-i18n="search_short">Search</span><kbd>⌘K</kbd>
+    </button>
+    <div class="top-actions">
+      <button class="icon-btn" id="lang" aria-label="Language">FR</button>
+      <button class="icon-btn" id="theme" aria-label="Theme">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9c0-.5 0-.9-.1-1.4A5.5 5.5 0 0 1 13.4 3.1 9 9 0 0 0 12 3Z"/></svg>
+      </button>
+      <a class="discord-btn" id="discordTop" href="https://discord.gg/agentik-os" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.3a18.4 18.4 0 0 0-5.5 0L8.6 3a19.7 19.7 0 0 0-4.9 1.5C.6 9.1-.3 13.6.1 18.1a19.9 19.9 0 0 0 6 3l1.3-2.1c-.7-.3-1.4-.6-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.2 2.1a19.8 19.8 0 0 0 6.1-3c.5-5.2-.9-9.7-3.6-13.7ZM8 15.4c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>
+        <span data-i18n="join">Join Discord</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main id="view" class="wrap"></main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div>
+      <div class="brand small"><span class="radar"><i></i><i></i><b></b></span><span>Jev <em>Radar</em></span></div>
+      <p data-i18n="foot_about">An unofficial, independent tracker of everything said about Jev on X. Not affiliated with TypeSafe AI. Posts belong to their authors and link back to X.</p>
+    </div>
+    <div>
+      <h4 data-i18n="foot_method">Method</h4>
+      <p data-i18n="foot_method_txt">Public posts are collected every hour from a growing network of accounts, videos are transcribed, and each post is classified by Jev itself: type, domain, system pattern, niche and business signals.</p>
+    </div>
+    <div>
+      <h4 data-i18n="foot_community">Community</h4>
+      <p><a href="https://discord.gg/agentik-os" target="_blank" rel="noopener">Discord · Agentik OS</a></p>
+      <p id="xLinkFoot"></p>
+      <p><a href="https://typesafe.ai" target="_blank" rel="noopener">typesafe.ai</a> · <a href="https://docs.typesafe.ai" target="_blank" rel="noopener">docs</a></p>
+    </div>
+  </div>
+</footer>
+
+<div class="search-layer" id="searchLayer" hidden>
+  <div class="search-box">
+    <div class="search-input">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path fill="none" stroke="currentColor" stroke-width="2" d="m21 21-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>
+      <input id="sq" type="search" autocomplete="off" spellcheck="false">
+      <kbd>esc</kbd>
+    </div>
+    <div class="search-results" id="sres"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden><div class="modal-card" id="modalCard"></div></div>
+<div class="lightbox" id="lb" hidden><img id="lbimg" alt=""></div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

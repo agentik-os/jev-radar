@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.tmp
+.vercel
+.DS_Store
+logs/
