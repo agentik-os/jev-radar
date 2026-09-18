@@ -187,7 +187,7 @@ let POSTS = [], MAIN = [], NICHES = [], IDEAS = [], PLAYS = [], META = {}, BYID 
 async function load() {
   view.innerHTML = `<div class="skeleton">loading the radar…</div>`;
   const get = u => fetch(u, { cache: "no-cache" }).then(r => r.json());
-  [POSTS, NICHES, IDEAS, META, PLAYS] = await Promise.all([get("data/posts.json"), get("data/niches.json"), get("data/ideas.json"), get("data/meta.json"), get("data/plays.json").catch(() => [])]);
+  [POSTS, NICHES, IDEAS, META, PLAYS] = await Promise.all([get("/data/posts.json"), get("/data/niches.json"), get("/data/ideas.json"), get("/data/meta.json"), get("/data/plays.json").catch(() => [])]);
   MAIN = POSTS.filter(p => !p.r);
   POSTS.forEach(p => BYID.set(p.id, p));
   const au = new Map();
@@ -271,9 +271,9 @@ function renderSearch() {
   const posts = search(q, 40);
   let h = "";
   if (people.length) h += `<div class="sr-group"><h4>${t("sr_people")}</h4>${people.map(a => `
-    <div class="sr-item" data-go="#/all?q=@${encodeURIComponent(a.h)}"><img src="${esc(a.av)}" alt="" loading="lazy"><div class="sr-body"><b>${hl(a.n, q)}</b> <small>@${hl(a.h, q)} · ${T[lang].jposts(a.posts)} · ${fmtN(a.views)} ${t("reach")}</small></div></div>`).join("")}</div>`;
+    <div class="sr-item" data-go="/all?q=@${encodeURIComponent(a.h)}"><img src="${esc(a.av)}" alt="" loading="lazy"><div class="sr-body"><b>${hl(a.n, q)}</b> <small>@${hl(a.h, q)} · ${T[lang].jposts(a.posts)} · ${fmtN(a.views)} ${t("reach")}</small></div></div>`).join("")}</div>`;
   if (niches.length) h += `<div class="sr-group"><h4>${t("sr_ideas")}</h4>${niches.map(x => `
-    <div class="sr-item" data-go="#/opportunities/${x.kind === "n" ? "niches" : "ideas"}?focus=${x.id}"><div class="sr-body"><b>${hl(x.t, q)}</b><p>${hl(x.s, q)}</p></div></div>`).join("")}</div>`;
+    <div class="sr-item" data-go="/opportunities/${x.kind === "n" ? "niches" : "ideas"}?focus=${x.id}"><div class="sr-body"><b>${hl(x.t, q)}</b><p>${hl(x.s, q)}</p></div></div>`).join("")}</div>`;
   if (posts.length) h += `<div class="sr-group"><h4>${t("sr_posts")} <span>${posts.length >= 40 ? "40+" : posts.length}</span></h4>${posts.map(p => {
     const th = p.v[0]?.th || p.ph[0] || p.ar?.co;
     return `<div class="sr-item" data-post="${p.id}"><img src="${esc(p.a.av)}" alt="" loading="lazy"><div class="sr-body"><b>${esc(p.a.n)}</b> <small>@${esc(p.a.h)} · ${fmtN(p.m[4])} views · ${lab("category", p.j.category)}</small><p>${hl(snippet(p, q), q)}</p></div>${th ? `<img class="sr-thumb" src="${esc(th)}" alt="" loading="lazy">` : ""}</div>`;
@@ -290,7 +290,7 @@ sq.addEventListener("keydown", e => {
     items[sel]?.scrollIntoView({ block: "nearest" });
   } else if (e.key === "Enter") {
     if (items[sel]) items[sel].click();
-    else if (sq.value.trim()) { closeSearch(); location.hash = "#/all?q=" + encodeURIComponent(sq.value.trim()); }
+    else if (sq.value.trim()) { closeSearch(); go("/all?q=" + encodeURIComponent(sq.value.trim())); }
   }
 });
 sres.addEventListener("click", e => {
@@ -299,7 +299,7 @@ sres.addEventListener("click", e => {
   const it = e.target.closest(".sr-item");
   if (!it) return;
   if (it.dataset.post) { closeSearch(); openPost(it.dataset.post); }
-  else if (it.dataset.go) { closeSearch(); location.hash = it.dataset.go; }
+  else if (it.dataset.go) { closeSearch(); go(it.dataset.go); }
 });
 layer.addEventListener("click", e => { if (e.target === layer) closeSearch(); });
 document.addEventListener("keydown", e => {
@@ -343,6 +343,7 @@ function card(p, opts = {}) {
 
 // ---------------------------------------------------------------- modale
 const modal = $("#modal"), mcard = $("#modalCard");
+let modalBack = null;
 function openPost(id, push = true) {
   const p = BYID.get(id);
   if (!p) return;
@@ -362,18 +363,18 @@ function openPost(id, push = true) {
     ${p.tr ? `<details><summary>${t("transcript")}</summary><div>${esc(p.tr)}</div></details>` : ""}
     ${p.lk?.length ? `<details open><summary>${t("links")}</summary><div>${p.lk.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`).join("<br>")}</div></details>` : ""}
     ${tagsOf(p)}
-    ${n ? `<div class="tags"><a class="tag" href="#/opportunities/niches?focus=${n.id}">💡 ${esc(n.label[lang])} · #${n.rank}</a></div>` : ""}
+    ${n ? `<div class="tags"><a class="tag" href="/opportunities/niches?focus=${n.id}">💡 ${esc(n.label[lang])} · #${n.rank}</a></div>` : ""}
     <div class="metrics"><span>${ICON.eye}${fmtN(p.m[4])}</span><span>${ICON.heart}${fmtN(p.m[0])}</span><span>${ICON.rt}${fmtN(p.m[1])}</span><span>💬 ${fmtN(p.m[2])}</span><span>${ICON.bm}${fmtN(p.m[3])}</span>${p.rk ? `<span>Radar #${p.rk}</span>` : ""}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="${esc(p.u)}" target="_blank" rel="noopener">${t("view_on_x")}</a><button class="btn ghost" id="copyLink">${t("copy_link")}</button></div>`;
   modal.hidden = false; document.body.style.overflow = "hidden";
   $(".close", mcard).onclick = closePost;
-  $("#copyLink").onclick = e => { navigator.clipboard?.writeText(location.origin + location.pathname + "#/p/" + p.id); e.target.textContent = t("copied"); };
-  if (push && !location.hash.startsWith("#/p/")) history.pushState(null, "", "#/p/" + p.id);
+  $("#copyLink").onclick = e => { navigator.clipboard?.writeText(location.origin + "/p/" + p.id); e.target.textContent = t("copied"); };
+  if (push && !location.pathname.startsWith("/p/")) { modalBack = location.pathname + location.search; history.pushState(null, "", "/p/" + p.id); }
 }
 function closePost() {
   modal.hidden = true; document.body.style.overflow = "";
   $$("video", mcard).forEach(v => v.pause());
-  if (location.hash.startsWith("#/p/")) history.length > 1 ? history.back() : (location.hash = "#/");
+  if (location.pathname.startsWith("/p/")) { if (modalBack) history.back(); else go("/"); }
 }
 modal.addEventListener("click", e => {
   if (e.target === modal) closePost();
@@ -429,11 +430,11 @@ function ctaBlock() {
     ${CFG.x ? `<a class="x-btn" href="${CFG.x}" target="_blank" rel="noopener">${ICON.x}<span>${t("follow")} @${CFG.x.split("/").pop()}</span></a>` : ""}</div></section>`;
 }
 function person(a, i) {
-  return `<div class="person" data-go="#/all?q=@${encodeURIComponent(a.h)}"><span class="pr">${i + 1}</span><img src="${esc(a.av)}" alt="" loading="lazy"><div style="min-width:0"><b>${esc(a.n)}</b><span>@${esc(a.h)} · ${fmtN(a.f)} ${t("followers")}</span><span>${T[lang].jposts(a.posts)} · ${fmtN(a.views)} ${t("reach")}</span></div></div>`;
+  return `<div class="person" data-go="/all?q=@${encodeURIComponent(a.h)}"><span class="pr">${i + 1}</span><img src="${esc(a.av)}" alt="" loading="lazy"><div style="min-width:0"><b>${esc(a.n)}</b><span>@${esc(a.h)} · ${fmtN(a.f)} ${t("followers")}</span><span>${T[lang].jposts(a.posts)} · ${fmtN(a.views)} ${t("reach")}</span></div></div>`;
 }
 view.addEventListener("click", e => {
   const g = e.target.closest("[data-go]");
-  if (g && g.dataset.go) location.hash = g.dataset.go;
+  if (g && g.dataset.go) go(g.dataset.go);
 });
 
 // ---------------------------------------------------------------- pages
@@ -445,14 +446,14 @@ function pageHome() {
   const fans = MAIN.filter(p => sentiment(p.j.sentiment) === 4 && p.j.category !== "official").sort((a, b) => b.m[4] - a.m[4]).slice(0, 3);
   const integ = MAIN.filter(p => p.j.category === "integration").sort((a, b) => b.m[4] - a.m[4]).slice(0, 6);
   const chipDefs = [
-    ["#/builds", lang === "fr" ? "Démos" : "Builds", MAIN.filter(p => p.j.category === "build_demo").length],
-    ["#/all?cat=integration", lang === "fr" ? "Intégrations" : "Integrations", MAIN.filter(p => p.j.category === "integration").length],
-    ["#/all?cat=critique", lang === "fr" ? "Critiques" : "Critiques", MAIN.filter(p => p.j.category === "critique").length],
-    ["#/all?dom=games", lang === "fr" ? "Jeux" : "Games", MAIN.filter(p => p.j.domain === "games").length],
-    ["#/all?dom=agents_browser", lang === "fr" ? "Agents navigateur" : "Browser agents", MAIN.filter(p => p.j.domain === "agents_browser").length],
-    ["#/all?fmt=video", lang === "fr" ? "Vidéos" : "Videos", MAIN.filter(p => p.v.length).length],
-    ["#/opportunities", lang === "fr" ? "Idées business" : "Business ideas", IDEAS.length],
-    ["#/map", lang === "fr" ? "Carte" : "Map", null],
+    ["/builds", lang === "fr" ? "Démos" : "Builds", MAIN.filter(p => p.j.category === "build_demo").length],
+    ["/all?cat=integration", lang === "fr" ? "Intégrations" : "Integrations", MAIN.filter(p => p.j.category === "integration").length],
+    ["/all?cat=critique", lang === "fr" ? "Critiques" : "Critiques", MAIN.filter(p => p.j.category === "critique").length],
+    ["/all?dom=games", lang === "fr" ? "Jeux" : "Games", MAIN.filter(p => p.j.domain === "games").length],
+    ["/all?dom=agents_browser", lang === "fr" ? "Agents navigateur" : "Browser agents", MAIN.filter(p => p.j.domain === "agents_browser").length],
+    ["/all?fmt=video", lang === "fr" ? "Vidéos" : "Videos", MAIN.filter(p => p.v.length).length],
+    ["/opportunities", lang === "fr" ? "Idées business" : "Business ideas", IDEAS.length],
+    ["/map", lang === "fr" ? "Carte" : "Map", null],
   ];
   view.innerHTML = `
   <section class="hero">
@@ -463,7 +464,7 @@ function pageHome() {
       <svg viewBox="0 0 24 24" width="20" height="20"><path fill="none" stroke="currentColor" stroke-width="2" d="m21 21-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>
       <span>${t("hero_search")}</span><kbd>⌘K</kbd>
     </div>
-    <div class="hero-cta"><a class="btn money-hero" href="#/money">💸 ${lang === "fr" ? "Comment gagner de l'argent avec Jev, maintenant" : "How to make money with Jev, right now"}</a></div>
+    <div class="hero-cta"><a class="btn money-hero" href="/money">💸 ${lang === "fr" ? "Comment gagner de l'argent avec Jev, maintenant" : "How to make money with Jev, right now"}</a></div>
     <div class="chips" style="margin-top:18px">${chipDefs.map(([h, l, n]) => `<a class="chip" href="${h}">${l}${n != null ? `<span class="n">${n}</span>` : ""}</a>`).join("")}</div>
   </section>
   <div class="kpis">
@@ -474,24 +475,24 @@ function pageHome() {
     <div class="kpi"><b>${MAIN.filter(p => p.v.length).length}</b><span>${t("k_videos")}</span></div>
     <div class="kpi"><b>${MAIN.filter(p => p.j.open_source > .6).length}</b><span>${t("k_code")}</span></div>
   </div>
-  <section class="sec"><div class="sec-head"><div><h2>${t("trending")}</h2><p>${t("trending_p")}</p></div><a class="more" href="#/all?sort=date">${t("see_all")}</a></div>
+  <section class="sec"><div class="sec-head"><div><h2>${t("trending")}</h2><p>${t("trending_p")}</p></div><a class="more" href="/all?sort=date">${t("see_all")}</a></div>
     <div class="rail">${trending.map(p => card(p)).join("")}</div></section>
-  <section class="sec"><div class="sec-head"><div><h2>${t("builds_h")}</h2><p>${t("builds_p")}</p></div><a class="more" href="#/builds">${t("see_all")}</a></div>
+  <section class="sec"><div class="sec-head"><div><h2>${t("builds_h")}</h2><p>${t("builds_p")}</p></div><a class="more" href="/builds">${t("see_all")}</a></div>
     <div class="grid">${builds.map(p => card(p)).join("")}</div></section>
-  <section class="sec"><div class="sec-head"><div><h2>${t("opps_h")}</h2><p>${t("opps_p")}</p></div><a class="more" href="#/opportunities">${t("see_all")}</a></div>
+  <section class="sec"><div class="sec-head"><div><h2>${t("opps_h")}</h2><p>${t("opps_p")}</p></div><a class="more" href="/opportunities">${t("see_all")}</a></div>
     ${nicheBoard(NICHES.slice(0, 6), false)}</section>
   <section class="sec"><div class="sec-head"><div><h2>${t("pulse_h")}</h2><p>${t("pulse_p")}</p></div></div>
     <div class="panels">
       <div class="panel"><h3>${t("per_day")}</h3>${perDayChart(MAIN)}</div>
-      <div class="panel"><h3>${t("tone")}</h3>${sentimentBar(MAIN)}<h3 style="margin-top:22px">${t("by_pattern")}</h3>${hbars(counts(MAIN.filter(p => ["build_demo", "official", "integration"].includes(p.j.category) && p.j.pattern !== "none"), p => p.j.pattern), "pattern", k => "#/all?pat=" + k, "var(--cyan)")}</div>
-      <div class="panel"><h3>${t("by_domain")}</h3>${hbars(counts(MAIN, p => p.j.domain), "domain", k => "#/all?dom=" + k)}</div>
+      <div class="panel"><h3>${t("tone")}</h3>${sentimentBar(MAIN)}<h3 style="margin-top:22px">${t("by_pattern")}</h3>${hbars(counts(MAIN.filter(p => ["build_demo", "official", "integration"].includes(p.j.category) && p.j.pattern !== "none"), p => p.j.pattern), "pattern", k => "/all?pat=" + k, "var(--cyan)")}</div>
+      <div class="panel"><h3>${t("by_domain")}</h3>${hbars(counts(MAIN, p => p.j.domain), "domain", k => "/all?dom=" + k)}</div>
     </div></section>
   <section class="sec"><div class="sec-head"><div><h2>${t("debate_h")}</h2><p>${t("debate_p")}</p></div></div>
     <div class="panels"><div><h3 class="eyebrow" style="color:var(--red)">${t("skeptics")}</h3><div class="grid" style="grid-template-columns:1fr">${crit.map(p => card(p)).join("")}</div></div>
     <div><h3 class="eyebrow">${t("believers")}</h3><div class="grid" style="grid-template-columns:1fr">${fans.map(p => card(p)).join("")}</div></div></div></section>
-  <section class="sec"><div class="sec-head"><div><h2>${t("runs_h")}</h2><p>${t("runs_p")}</p></div><a class="more" href="#/all?cat=integration">${t("see_all")}</a></div>
+  <section class="sec"><div class="sec-head"><div><h2>${t("runs_h")}</h2><p>${t("runs_p")}</p></div><a class="more" href="/all?cat=integration">${t("see_all")}</a></div>
     <div class="grid">${integ.map(p => card(p)).join("")}</div></section>
-  <section class="sec"><div class="sec-head"><div><h2>${t("people_h")}</h2><p>${t("people_p")}</p></div><a class="more" href="#/people">${t("see_all")}</a></div>
+  <section class="sec"><div class="sec-head"><div><h2>${t("people_h")}</h2><p>${t("people_p")}</p></div><a class="more" href="/people">${t("see_all")}</a></div>
     <div class="people">${AUTHORS.slice(0, 12).map(person).join("")}</div></section>
   ${ctaBlock()}`;
   $("#heroSearch").onclick = () => openSearch();
@@ -511,7 +512,7 @@ function nicheBoard(list, full = true, focus) {
       </div>
       <div class="bdetail ${focus === b.id ? "open" : ""}" id="nd-${b.id}">
         <div class="idea"><b>${t("idea_label")}</b>${esc(b.idea[lang])}</div>
-        ${IDEAS.filter(i => i.n === b.id).length ? `<div class="tags" style="margin-bottom:12px">${IDEAS.filter(i => i.n === b.id).map(i => `<a class="tag" href="#/opportunities/ideas?focus=${i.k}">💡 ${esc(i[lang])} · ${Math.round(i.score)}</a>`).join("")}</div>` : ""}
+        ${IDEAS.filter(i => i.n === b.id).length ? `<div class="tags" style="margin-bottom:12px">${IDEAS.filter(i => i.n === b.id).map(i => `<a class="tag" href="/opportunities/ideas?focus=${i.k}">💡 ${esc(i[lang])} · ${Math.round(i.score)}</a>`).join("")}</div>` : ""}
         <div class="eyebrow">${t("evidence")}</div>
         <div class="grid">${b.top.map(id => BYID.get(id)).filter(Boolean).slice(0, full ? 4 : 3).map(p => card(p)).join("")}</div>
       </div>`).join("")}
@@ -557,7 +558,7 @@ function pageOpps(sub, params) {
   <div class="page-head"><div class="eyebrow">${lang === "fr" ? "Analyse de l'analyse" : "Analysis of the analysis"}</div><h1>${t("opps_title")}</h1><p>${t("opps_lead")}</p></div>
   <div class="seg">${["niches", "ideas", "check"].map(s => `<button data-seg="${s}" class="${s === sub ? "on" : ""}">${t("seg_" + s)}</button>`).join("")}</div>
   <div id="oppBody"></div>`;
-  $$(".seg button").forEach(b => b.onclick = () => location.hash = "#/opportunities/" + b.dataset.seg);
+  $$(".seg button").forEach(b => b.onclick = () => go("/opportunities/" + b.dataset.seg));
   const body = $("#oppBody");
   if (sub === "niches") {
     body.innerHTML = `<div class="method">${Object.entries(W).map(([k, v]) => `<div><b style="color:${SUBCOL[k]}">${Math.round(v * 100)}%</b><span>${t("w_" + k)}</span></div>`).join("")}</div>
@@ -590,7 +591,7 @@ async function checkIdea() {
     const score = 100 * Object.entries(W).reduce((a, [k, w]) => a + w * (d.sub[k] || 0), 0);
     res.innerHTML = `<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">${ring(score, "var(--cyan)").replace('class="ring"', 'class="ring" style="width:64px;height:64px"')}<div><b style="font:600 34px var(--mono);letter-spacing:-.04em">${Math.round(score)}</b><div style="color:var(--muted);font-size:13px">${lang === "fr" ? "vs les idées de la bibliothèque" : "vs the idea library"} : #${IDEAS.filter(i => i.score > score).length + 1} / ${IDEAS.length + 1}</div></div></div>
       ${Object.entries(d.sub).map(([k, v]) => `<div class="hbar" style="cursor:default"><span class="l">${t("s_" + k)}</span><div class="t"><div class="f" style="width:${v * 100}%;background:${SUBCOL[k]}"></div></div><span class="n">${Math.round(v * 100)}</span></div>`).join("")}
-      ${d.niche && d.niche !== "none" ? `<p style="margin-top:14px">${lang === "fr" ? "Niche la plus proche" : "Closest niche"} : <a href="#/opportunities/niches?focus=${d.niche}">${esc(NICHES.find(n => n.id === d.niche)?.label[lang] || d.niche)}</a></p>` : ""}
+      ${d.niche && d.niche !== "none" ? `<p style="margin-top:14px">${lang === "fr" ? "Niche la plus proche" : "Closest niche"} : <a href="/opportunities/niches?focus=${d.niche}">${esc(NICHES.find(n => n.id === d.niche)?.label[lang] || d.niche)}</a></p>` : ""}
       <p class="note">${t("not_advice")}</p>`;
   } catch {
     res.innerHTML = `<div class="result-empty">${t("check_err")}</div>`;
@@ -637,7 +638,7 @@ function feedPage({ title, lead, base, params, masonry = true, rank = false }) {
     const ps = new URLSearchParams();
     const v = { q: $("#fq").value.trim(), cat: $("#fcat").value, dom: $("#fdom").value, nic: $("#fnic").value, fmt: $("#ffmt").value, sort: $("#fsort").value === "rs" ? "" : $("#fsort").value, rep: $("#frep").checked ? "1" : "", pat };
     Object.entries(v).forEach(([k, x]) => x && ps.set(k, x));
-    history.replaceState(null, "", location.hash.split("?")[0] + (ps.toString() ? "?" + ps : ""));
+    history.replaceState(null, "", location.pathname + (ps.toString() ? "?" + ps : ""));
     route();
   };
   let tm;
@@ -684,7 +685,7 @@ function playCard(p, i, big) {
       <div><h4>${t("plan48")}</h4><ol class="steps">${steps.map((st, j) => `<li><label><input type="checkbox" data-step="${p.k}:${j}" ${done.includes(j) ? "checked" : ""}> ${esc(st)}</label></li>`).join("")}</ol>
         <h4>${t("get_paid")}</h4><p class="pay">${esc(p.pay)}</p></div>
       <div><h4>${t("launch_post")}</h4><div class="hook"><pre>${esc(hook)}</pre><button class="btn ghost small" data-copy="${esc(hook)}">${t("copy")}</button></div>
-        ${p.niche_rank ? `<a class="evidence" href="#/opportunities/niches?focus=${p.niche}">📈 ${T[lang].evidence_line(p.niche_rank, p.niche_posts)} →</a>` : ""}</div>
+        ${p.niche_rank ? `<a class="evidence" href="/opportunities/niches?focus=${p.niche}">📈 ${T[lang].evidence_line(p.niche_rank, p.niche_posts)} →</a>` : ""}</div>
     </div>` : `<details class="play-more"><summary>${t("plan48")} · ${t("launch_post")}</summary><ol class="steps">${steps.map(st => `<li>${esc(st)}</li>`).join("")}</ol><div class="hook"><pre>${esc(hook)}</pre><button class="btn ghost small" data-copy="${esc(hook)}">${t("copy")}</button></div></details>`}
   </article>`;
 }
@@ -771,10 +772,10 @@ function mapTree() {
         ...pick(integ, 6),
       ] },
       { label: fr ? "Schémas de systèmes" : "System patterns", children: ["realtime_loop", "batch_classifier", "router", "reviewer_guardrail", "ranking", "features_for_ml"].map(k => ({
-        label: lab("pattern", k), count: MAIN.filter(p => p.j.pattern === k && ["build_demo", "official"].includes(p.j.category)).length, go: "#/all?pat=" + k, children: byPat(k) })) },
-      { label: fr ? "Top niches" : "Top niches", children: NICHES.slice(0, 8).map(n => ({ label: `#${n.rank} ${n.label[lang]}`, count: Math.round(n.score), go: "#/opportunities/niches?focus=" + n.id,
+        label: lab("pattern", k), count: MAIN.filter(p => p.j.pattern === k && ["build_demo", "official"].includes(p.j.category)).length, go: "/all?pat=" + k, children: byPat(k) })) },
+      { label: fr ? "Top niches" : "Top niches", children: NICHES.slice(0, 8).map(n => ({ label: `#${n.rank} ${n.label[lang]}`, count: Math.round(n.score), go: "/opportunities/niches?focus=" + n.id,
         children: [{ label: n.idea[lang].slice(0, 70) + (n.idea[lang].length > 70 ? "…" : "") }, ...(n.top.slice(0, 2).map(id => BYID.get(id)).filter(Boolean).map(p => ({ label: `@${p.a.h} · ${p.t.split("\n")[0].slice(0, 40)}`, post: p.id })))] })) },
-      { label: fr ? "Meilleures idées business" : "Best business ideas", children: IDEAS.slice(0, 8).map(i => ({ label: `${i[lang]}`, count: Math.round(i.score), go: "#/opportunities/ideas?focus=" + i.k })) },
+      { label: fr ? "Meilleures idées business" : "Best business ideas", children: IDEAS.slice(0, 8).map(i => ({ label: `${i[lang]}`, count: Math.round(i.score), go: "/opportunities/ideas?focus=" + i.k })) },
       { label: fr ? "Le débat" : "The debate", children: pick(MAIN.filter(p => p.j.category === "critique").sort((a, b) => b.m[4] - a.m[4]), 5) },
       { label: fr ? "Apprendre" : "Learn", children: [
         { label: fr ? "Blog de lancement" : "Launch blog", href: "https://typesafe.ai/blog/introducing-system-one-models-and-jev" },
@@ -834,7 +835,7 @@ view.addEventListener("click", e => {
   const p = n.dataset.path;
   const node = (function find(x) { if (x.path === p) return x; for (const c of x.children || []) { const r = find(c); if (r) return r; } })(mapTreeCache());
   if (node?.children?.length) { mmOpen.has(p) ? mmOpen.delete(p) : mmOpen.add(p); drawMap(); }
-  else if (n.dataset.mgo) location.hash = n.dataset.mgo;
+  else if (n.dataset.mgo) go(n.dataset.mgo);
 });
 function mapTreeCache() {
   const r = mapTree();
@@ -849,13 +850,12 @@ function applyLang() {
   $("#lang").textContent = lang === "fr" ? "EN" : "FR";
   const x = $("#xLinkFoot");
   if (x && CFG.x) x.innerHTML = `<a href="${CFG.x}" target="_blank" rel="noopener">X · @${CFG.x.split("/").pop()}</a>`;
-  if (!$("#tabMap")) $("#tabs").insertAdjacentHTML("beforeend", `<a href="#/map" data-r="map" id="tabMap">${t("nav_map")}</a>`);
+  if (!$("#tabMap")) $("#tabs").insertAdjacentHTML("beforeend", `<a href="/map" data-r="map" id="tabMap">${t("nav_map")}</a>`);
   else $("#tabMap").textContent = t("nav_map");
-  if (!$("#moneyBtn")) $("#openSearch").insertAdjacentHTML("beforebegin", `<a class="money-btn" id="moneyBtn" href="#/money" data-r="money">💸 <span>${t("nav_money")}</span></a>`);
+  if (!$("#moneyBtn")) $("#openSearch").insertAdjacentHTML("beforebegin", `<a class="money-btn" id="moneyBtn" href="/money" data-r="money">💸 <span>${t("nav_money")}</span></a>`);
 }
 function route() {
-  const h = location.hash.slice(1) || "/";
-  const [path, qs] = h.split("?");
+  const path = location.pathname || "/", qs = location.search.slice(1);
   const params = new URLSearchParams(qs || "");
   const parts = path.split("/").filter(Boolean);
   const r = parts[0] || "home";
@@ -878,7 +878,21 @@ function route() {
   else pageHome();
   if (prev.split("|")[1] !== path) window.scrollTo({ top: 0 });
 }
-window.addEventListener("hashchange", route);
+function go(url) {
+  if (url === location.pathname + location.search) return route();
+  history.pushState(null, "", url);
+  route();
+}
+window.addEventListener("popstate", () => { if (!location.pathname.startsWith("/p/")) modalBack = null; route(); });
+// liens internes : navigation sans rechargement
+document.addEventListener("click", e => {
+  const a = e.target.closest("a[href^='/']");
+  if (!a || a.target || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+  e.preventDefault();
+  go(a.getAttribute("href"));
+});
+// anciens liens en #/… : convertis en vraies adresses
+if (location.hash.startsWith("#/")) history.replaceState(null, "", location.hash.slice(1) || "/");
 $("#lang").onclick = () => { lang = lang === "fr" ? "en" : "fr"; try { localStorage.setItem("jr_lang", lang); } catch {} applyLang(); buildIndex(); route(); };
 $("#theme").onclick = () => setTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
 

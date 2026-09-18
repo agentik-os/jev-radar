@@ -4,7 +4,42 @@
   "outputDirectory": "site",
   "framework": null,
   "headers": [
-    { "source": "/data/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, s-maxage=300, stale-while-revalidate=3600" }] },
-    { "source": "/(.*)\\.(js|css)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, s-maxage=600" }] }
+    {
+      "source": "/data/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=300, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(js|css)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=600"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "api/page.js": {
+      "includeFiles": "site/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/p/:id",
+      "destination": "/api/page?path=/p/:id"
+    },
+    {
+      "source": "/:section(builds|opportunities|money|top|people|all|map)",
+      "destination": "/api/page?path=/:section"
+    },
+    {
+      "source": "/opportunities/:sub(niches|ideas|check)",
+      "destination": "/api/page?path=/opportunities/:sub"
+    }
   ]
 }
