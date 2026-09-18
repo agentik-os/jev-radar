@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Mise à jour du radar. `./run.sh` = passage complet (horaire) ; `./run.sh fast` = passage rapide (toutes les 15 min).
-# Le passage rapide ne pousse (donc ne redéploie) que s'il a trouvé des posts ET si le dernier push date de plus de 25 min,
-# pour rester sous la limite de déploiements Vercel.
+# Chaque passage publie les données dans Vercel Blob (le site en ligne change sans redéploiement ; Vercel ignore les
+# commits de données). Le passage rapide ne pousse sur GitHub (sauvegarde) que si le dernier push date de plus de 25 min.
 set -euo pipefail
 cd "$(dirname "$0")"
 MODE="${1:-full}"
@@ -18,11 +18,13 @@ if [ "$MODE" = fast ]; then
   uv run --project .. python replies.py || true
   uv run --project .. --extra ci python crawl.py --fast
   if [ "$(cat ../data/last_crawl_new.txt 2>/dev/null || echo 0)" = "0" ]; then cd ..; commit_local; echo "rien de nouveau"; exit 0; fi
-  last=$(git -C .. log -1 --format=%ct origin/main 2>/dev/null || echo 0)
-  if [ $(( $(date +%s) - last )) -lt 1500 ]; then cd ..; commit_local; echo "nouveaux posts gardés pour le prochain push"; exit 0; fi
   uv run --project .. --extra ci python transcribe.py
   uv run --project .. python analyze.py
   uv run --project .. python build.py
+  uv run --project .. python publish.py || echo "!! publish : le site en ligne n'a PAS été mis à jour"
+  # le site en ligne est déjà à jour (Blob) ; le push GitHub n'est qu'une sauvegarde : pas plus d'un toutes les 25 min
+  last=$(git -C .. log -1 --format=%ct origin/main 2>/dev/null || echo 0)
+  if [ $(( $(date +%s) - last )) -lt 1500 ]; then cd ..; commit_local; echo "site publié, push GitHub reporté"; exit 0; fi
 else
   uv run --project .. python replies.py || true
   uv run --project .. --extra ci python crawl.py
@@ -30,6 +32,7 @@ else
   uv run --project .. python analyze.py
   uv run --project .. python ideas_eval.py
   uv run --project .. python build.py
+  uv run --project .. python publish.py || echo "!! publish : le site en ligne n'a PAS été mis à jour"
   [ -f autopost.py ] && uv run --project .. python autopost.py || true
 fi
 cd ..

@@ -5,20 +5,24 @@ import { join } from "node:path";
 
 const SITE = "https://jev.agentik-os.com";
 const root = join(process.cwd(), "site");
-let cache = null;
-function load() {
-  if (!cache) {
-    const read = f => readFileSync(join(root, f), "utf8");
-    const posts = JSON.parse(read("data/posts.json"));
-    cache = {
-      html: read("index.html"),
-      posts: new Map(posts.map(p => [p.id, p])),
-      niches: JSON.parse(read("data/niches.json")),
-      ideas: JSON.parse(read("data/ideas.json")),
-      meta: JSON.parse(read("data/meta.json")),
-    };
+// Les données viennent de Vercel Blob (publiées à chaque passage par pipeline/publish.py), pas du déploiement.
+const DATA = "https://fhkvcmadm6yzepmo.public.blob.vercel-storage.com/jev/";
+const EMPTY = { posts: [], niches: [], ideas: [], meta: {} };
+let html = null, cache = null, cachedAt = 0;
+async function load() {
+  html ??= readFileSync(join(root, "index.html"), "utf8");
+  if (!cache || Date.now() - cachedAt > 300_000) {
+    try {
+      const get = async f => { const r = await fetch(DATA + f); if (!r.ok) throw new Error(`${f} ${r.status}`); return r.json(); };
+      const [posts, niches, ideas, meta] = await Promise.all(["posts.json", "niches.json", "ideas.json", "meta.json"].map(get));
+      cache = { posts: new Map(posts.map(p => [p.id, p])), niches, ideas, meta };
+      cachedAt = Date.now();
+    } catch (e) {
+      console.error("données Blob indisponibles :", e.message);  // carte générique plutôt qu'une erreur 500
+      cache ??= { ...EMPTY, posts: new Map() };
+    }
   }
-  return cache;
+  return { html, ...cache };
 }
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const clip = (s, n) => { s = String(s || "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n - 1).replace(/\s\S*$/, "") + "…" : s; };
@@ -87,11 +91,11 @@ function block(m) {
 <!--/META-->`;
 }
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const url = new URL(req.url, SITE);
   const path = url.searchParams.get("path") || "/";
   url.searchParams.delete("path");
-  const d = load();
+  const d = await load();
   const html = d.html.replace(/<!--META-->[\s\S]*?<!--\/META-->/, block(metaFor(path, url.searchParams, d)));
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=0, s-maxage=600, stale-while-revalidate=86400");

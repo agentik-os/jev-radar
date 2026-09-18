@@ -5,15 +5,6 @@
   "framework": null,
   "headers": [
     {
-      "source": "/data/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, s-maxage=300, stale-while-revalidate=3600"
-        }
-      ]
-    },
-    {
       "source": "/(.*)\\.(js|css)",
       "headers": [
         {
@@ -34,10 +25,14 @@
   ],
   "functions": {
     "api/page.js": {
-      "includeFiles": "site/**"
+      "includeFiles": "site/index.html"
     }
   },
   "rewrites": [
+    {
+      "source": "/data/:path*",
+      "destination": "https://fhkvcmadm6yzepmo.public.blob.vercel-storage.com/jev/:path*"
+    },
     {
       "source": "/post",
       "destination": "/post.html"
@@ -54,5 +49,6 @@
       "source": "/opportunities/:sub(niches|ideas|check)",
       "destination": "/api/page?path=/opportunities/:sub"
     }
-  ]
+  ],
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)data' ':(exclude)site/data'"
 }

@@ -7,3 +7,5 @@
 /pyproject.toml
 /uv.lock
 /run.sh
+# données servies par Vercel Blob (réécriture /data/* dans vercel.json)
+/site/data
