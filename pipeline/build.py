@@ -13,6 +13,7 @@ from collections import defaultdict
 from common import DATA, SITE, load_posts, read_json, write_json
 from analyze import speech
 from ideas import IDEA_WEIGHTS, IDEAS
+from plays import PLAYS
 from niches import NICHES
 
 WEIGHTS = {"passive": 0.30, "traction": 0.25, "demand": 0.20, "momentum": 0.15, "space": 0.10}
@@ -147,6 +148,18 @@ def main():
         x["rank"] = r
     write_json(SITE / "data/ideas.json", ideas, separators=(",", ":"))
 
+    # pistes « Money now » + preuves du radar (niche et idée liées)
+    ibyk = {i["k"]: i for i in ideas}
+    plays = []
+    for pl in PLAYS:
+        nb, idea = nscore.get(pl["niche"]), ibyk.get(pl["idea"]) if pl["idea"] else None
+        plays.append({**pl, "niche_rank": nb["rank"] if nb else None, "niche_score": nb["score"] if nb else 0,
+                      "niche_posts": nb["posts"] if nb else 0, "niche_top": nb["top"][:2] if nb else [],
+                      "idea_score": idea["score"] if idea else None})
+    write_json(SITE / "data/plays.json", plays, separators=(",", ":"))
+    plays_api = [{"k": p["k"], "en": p["en"], "pen": p["pen"], "type": p["type"], "price": p["price"],
+                  "code": p["code"], "audience": p["audience"], "hours": p["hours"]} for p in PLAYS]
+
     main_posts = [p for p in posts if not p["r"]]
     meta = {
         "updated": now, "posts": len(posts), "main": len(main_posts),
@@ -166,7 +179,8 @@ def main():
     (SITE.parent / "api/_criteria.js").write_text(
         "// Généré par pipeline/build.py — ne pas modifier à la main.\n"
         f"export const CRITERIA = {json.dumps(crit, indent=1)};\n"
-        f"export const NICHES = {json.dumps({k: v['desc'] for k, v in NICHES.items()}, indent=1)};\n")
+        f"export const NICHES = {json.dumps({k: v['desc'] for k, v in NICHES.items()}, indent=1)};\n"
+        f"export const PLAYS = {json.dumps(plays_api, indent=1)};\n")
     size = (SITE / "data/posts.json").stat().st_size / 1e6
     print(f"site : {len(posts)} posts ({size:.1f} Mo), {len(board)} niches, n°1 = {board[0]['id'] if board else '-'}")
 

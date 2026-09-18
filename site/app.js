@@ -56,6 +56,20 @@ const T = {
     foot_method: "Method", foot_community: "Community",
     foot_method_txt: "Public posts are collected every hour from a growing network of accounts, videos are transcribed, and each post is classified by Jev itself: type, domain, system pattern, niche and business signals.",
     builders: "builders", in48: "in 48 h",
+    nav_money: "Money now",
+    money_eyebrow: "Money now", money_title: "Make money with Jev <em>this week</em>",
+    money_lead: "Tell Jev who you are. It ranks the fastest ways to get paid with Jev plus Claude or Astra: what to sell, the price, the 48-hour plan, the payment setup and the launch post.",
+    q_code: "Can you code?", q_audience: "Your audience", q_hours: "Hours this week", q_goal: "You want",
+    o_code: ["No", "A little", "Yes"], o_audience: ["None", "< 1k", "1k–10k", "10k+"], o_hours: ["< 5 h", "5–15 h", "15–40 h", "40 h+"], o_goal: ["Cash this week", "Monthly recurring", "Either"],
+    notes_ph: "Anything else? Your niche, skills, what you already have… (optional)",
+    money_btn: "Show me the money 💸", money_wait: "Jev is ranking the plays…",
+    do_today: "Do this <em>today</em>", more_plays: "More plays", fit: "fit", launch_in: h => `launch in ~${h} h`,
+    plan48: "48-hour plan", get_paid: "Get paid with", launch_post: "Launch post (copy & post)", copy: "Copy", copied2: "Copied ✓",
+    evidence_line: (r, n) => `Niche #${r} on the radar · ${n} posts`, recurring: "recurring", one_off: "one-off",
+    pay_box_h: "Take payments in 10 minutes", pay_box: ["Create a product in Stripe, Lemon Squeezy or Gumroad", "Copy its Payment Link (no code, no website needed)", "Put the link in your launch post and your X bio", "Deliver automatically: file download, license key or Discord role"],
+    money_disclaimer: "No guaranteed income. These are plays ranked on public signals; results depend on execution.",
+    money_personal: "Ranked for you by Jev", money_default: "Ranked by speed and demand. Answer the 4 questions to personalize with Jev.",
+    type_names: { pack: "Pack", code: "Code", service: "Service", subscription: "Subscription", course: "Workshop", api: "API" },
   },
   fr: {
     nav_home: "En direct", nav_builds: "Démos", nav_opps: "Opportunités", nav_top: "Top 100", nav_people: "Personnes", nav_all: "Tout", nav_map: "Carte",
@@ -105,6 +119,20 @@ const T = {
     foot_method: "Méthode", foot_community: "Communauté",
     foot_method_txt: "Les posts publics sont collectés chaque heure depuis un réseau de comptes qui s'agrandit, les vidéos sont transcrites, et chaque post est classé par Jev lui-même : type, domaine, système, niche et signaux business.",
     builders: "builders", in48: "en 48 h",
+    nav_money: "Money now",
+    money_eyebrow: "Money now", money_title: "Gagne de l'argent avec Jev <em>cette semaine</em>",
+    money_lead: "Dis à Jev qui tu es. Il classe les façons les plus rapides d'être payé avec Jev + Claude ou Astra : quoi vendre, le prix, le plan sur 48 h, le système de paiement et le post de lancement.",
+    q_code: "Tu sais coder ?", q_audience: "Ton audience", q_hours: "Heures dispo cette semaine", q_goal: "Tu veux",
+    o_code: ["Non", "Un peu", "Oui"], o_audience: ["Aucune", "< 1k", "1k–10k", "10k+"], o_hours: ["< 5 h", "5–15 h", "15–40 h", "40 h+"], o_goal: ["Du cash cette semaine", "Du récurrent", "Peu importe"],
+    notes_ph: "Autre chose ? Ta niche, tes compétences, ce que tu as déjà… (optionnel)",
+    money_btn: "Montre-moi l'argent 💸", money_wait: "Jev classe les pistes…",
+    do_today: "À faire <em>aujourd'hui</em>", more_plays: "Autres pistes", fit: "fit", launch_in: h => `lancement en ~${h} h`,
+    plan48: "Plan sur 48 h", get_paid: "Encaisser avec", launch_post: "Post de lancement (copie et poste)", copy: "Copier", copied2: "Copié ✓",
+    evidence_line: (r, n) => `Niche n°${r} sur le radar · ${n} posts`, recurring: "récurrent", one_off: "vente unique",
+    pay_box_h: "Encaisser en 10 minutes", pay_box: ["Crée un produit sur Stripe, Lemon Squeezy ou Gumroad", "Copie son lien de paiement (ni code ni site nécessaires)", "Mets le lien dans ton post de lancement et ta bio X", "Livre automatiquement : fichier, clé de licence ou rôle Discord"],
+    money_disclaimer: "Aucun revenu garanti. Ce sont des pistes classées sur des signaux publics ; le résultat dépend de l'exécution.",
+    money_personal: "Classé pour toi par Jev", money_default: "Classé par rapidité et demande. Réponds aux 4 questions pour que Jev personnalise.",
+    type_names: { pack: "Pack", code: "Code", service: "Service", subscription: "Abonnement", course: "Atelier", api: "API" },
   },
 };
 const L = {
@@ -154,12 +182,12 @@ const ICON = {
 };
 
 // ---------------------------------------------------------------- données
-let POSTS = [], MAIN = [], NICHES = [], IDEAS = [], META = {}, BYID = new Map(), AUTHORS = [], INDEX = [];
+let POSTS = [], MAIN = [], NICHES = [], IDEAS = [], PLAYS = [], META = {}, BYID = new Map(), AUTHORS = [], INDEX = [];
 
 async function load() {
   view.innerHTML = `<div class="skeleton">loading the radar…</div>`;
   const get = u => fetch(u, { cache: "no-cache" }).then(r => r.json());
-  [POSTS, NICHES, IDEAS, META] = await Promise.all([get("data/posts.json"), get("data/niches.json"), get("data/ideas.json"), get("data/meta.json")]);
+  [POSTS, NICHES, IDEAS, META, PLAYS] = await Promise.all([get("data/posts.json"), get("data/niches.json"), get("data/ideas.json"), get("data/meta.json"), get("data/plays.json").catch(() => [])]);
   MAIN = POSTS.filter(p => !p.r);
   POSTS.forEach(p => BYID.set(p.id, p));
   const au = new Map();
@@ -435,7 +463,8 @@ function pageHome() {
       <svg viewBox="0 0 24 24" width="20" height="20"><path fill="none" stroke="currentColor" stroke-width="2" d="m21 21-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>
       <span>${t("hero_search")}</span><kbd>⌘K</kbd>
     </div>
-    <div class="chips">${chipDefs.map(([h, l, n]) => `<a class="chip" href="${h}">${l}${n != null ? `<span class="n">${n}</span>` : ""}</a>`).join("")}</div>
+    <div class="hero-cta"><a class="btn money-hero" href="#/money">💸 ${lang === "fr" ? "Comment gagner de l'argent avec Jev, maintenant" : "How to make money with Jev, right now"}</a></div>
+    <div class="chips" style="margin-top:18px">${chipDefs.map(([h, l, n]) => `<a class="chip" href="${h}">${l}${n != null ? `<span class="n">${n}</span>` : ""}</a>`).join("")}</div>
   </section>
   <div class="kpis">
     <div class="kpi"><b>${MAIN.length.toLocaleString(lang)}</b><span>${t("k_posts")}</span></div>
@@ -621,6 +650,106 @@ function pagePeople() {
     <div class="people">${AUTHORS.slice(0, 300).map(person).join("")}</div>${ctaBlock()}`;
 }
 
+// ---------------------------------------------------------------- money now
+const MONEY_KEYS = { code: ["no", "a little", "yes, comfortably"], audience: ["none", "under 1,000 followers", "1,000 to 10,000 followers", "over 10,000 followers"],
+  hours: ["under 5", "5 to 15", "15 to 40", "over 40"], goal: ["cash this week", "recurring monthly revenue", "either"] };
+let moneyProfile = { code: 1, audience: 1, hours: 1, goal: 2, notes: "" }, moneyFit = null;
+try { Object.assign(moneyProfile, JSON.parse(localStorage.getItem("jr_money") || "{}")); } catch {}
+function heuristicFit(p) {
+  // sans Jev : rapidité, demande sur le radar, et compatibilité grossière avec le profil
+  const pr = moneyProfile;
+  let s = 0.55 - p.hours / 150 + (p.niche_score || 0) / 250;
+  if (p.code > pr.code) s -= 0.25 * (p.code - pr.code);
+  if (p.audience > pr.audience + 1) s -= 0.2;
+  if (pr.goal === 0 && p.recurring) s -= 0.08;
+  if (pr.goal === 1 && !p.recurring) s -= 0.08;
+  if (p.hours > [5, 15, 40, 80][pr.hours] * 1.5) s -= 0.15;
+  return Math.max(0.05, Math.min(0.95, s));
+}
+function rankedPlays() {
+  return PLAYS.map(p => ({ ...p, fitv: moneyFit?.[p.k]?.score ?? heuristicFit(p) }))
+    .sort((a, b) => b.fitv - a.fitv || a.hours - b.hours);
+}
+function segGroup(key, opts) {
+  return `<div class="mq"><label>${t("q_" + key)}</label><div class="seg mini">${opts.map((o, i) => `<button data-mk="${key}" data-mv="${i}" class="${moneyProfile[key] === i ? "on" : ""}">${esc(o)}</button>`).join("")}</div></div>`;
+}
+function playCard(p, i, big) {
+  const steps = p["s" + lang], hook = p["hook_" + lang], done = (() => { try { return JSON.parse(localStorage.getItem("jr_steps_" + p.k) || "[]"); } catch { return []; } })();
+  return `<article class="play ${big ? "big" : ""}">
+    <div class="play-top"><span class="play-rank">${i + 1}</span>
+      <div class="play-title"><b>${esc(p[lang])}</b><div class="play-meta"><span class="tag cat">${esc(T[lang].type_names[p.type] || p.type)}</span><span class="tag">💰 ${esc(p.price)}</span><span class="tag">${p.recurring ? t("recurring") : t("one_off")}</span><span class="tag">⏱ ${T[lang].launch_in(p.hours)}</span></div></div>
+      <div class="bscore">${ring(Math.round(p.fitv * 100), "var(--acc)")}<b>${Math.round(p.fitv * 100)}</b></div></div>
+    <p class="play-pitch">${esc(p["p" + lang])}</p>
+    ${big ? `<div class="play-grid">
+      <div><h4>${t("plan48")}</h4><ol class="steps">${steps.map((st, j) => `<li><label><input type="checkbox" data-step="${p.k}:${j}" ${done.includes(j) ? "checked" : ""}> ${esc(st)}</label></li>`).join("")}</ol>
+        <h4>${t("get_paid")}</h4><p class="pay">${esc(p.pay)}</p></div>
+      <div><h4>${t("launch_post")}</h4><div class="hook"><pre>${esc(hook)}</pre><button class="btn ghost small" data-copy="${esc(hook)}">${t("copy")}</button></div>
+        ${p.niche_rank ? `<a class="evidence" href="#/opportunities/niches?focus=${p.niche}">📈 ${T[lang].evidence_line(p.niche_rank, p.niche_posts)} →</a>` : ""}</div>
+    </div>` : `<details class="play-more"><summary>${t("plan48")} · ${t("launch_post")}</summary><ol class="steps">${steps.map(st => `<li>${esc(st)}</li>`).join("")}</ol><div class="hook"><pre>${esc(hook)}</pre><button class="btn ghost small" data-copy="${esc(hook)}">${t("copy")}</button></div></details>`}
+  </article>`;
+}
+function renderPlays() {
+  const list = rankedPlays();
+  $("#moneyRes").innerHTML = `
+    <p class="note" style="border-color:var(--acc)">${moneyFit ? t("money_personal") : t("money_default")}</p>
+    <div class="sec-head" style="margin-top:26px"><h2>${t("do_today")}</h2></div>
+    <div class="plays-big">${list.slice(0, 3).map((p, i) => playCard(p, i, true)).join("")}</div>
+    <div class="panel paybox"><h3>${t("pay_box_h")}</h3><ol>${T[lang].pay_box.map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>
+    <div class="sec-head" style="margin-top:34px"><h2>${t("more_plays")}</h2></div>
+    <div class="grid">${list.slice(3).map((p, i) => playCard(p, i + 3, false)).join("")}</div>
+    <p class="note">${t("money_disclaimer")}</p>
+    ${ctaBlock()}`;
+}
+function pageMoney() {
+  view.innerHTML = `
+  <div class="page-head"><div class="eyebrow">💸 ${t("money_eyebrow")}</div><h1>${t("money_title")}</h1><p>${t("money_lead")}</p></div>
+  <div class="panel money-form">
+    <div class="mqs">${segGroup("code", T[lang].o_code)}${segGroup("audience", T[lang].o_audience)}${segGroup("hours", T[lang].o_hours)}${segGroup("goal", T[lang].o_goal)}</div>
+    <textarea id="mnotes" maxlength="400" placeholder="${esc(t("notes_ph"))}">${esc(moneyProfile.notes || "")}</textarea>
+    <button class="btn money-go" id="moneyGo">${t("money_btn")}</button>
+  </div>
+  <div id="moneyRes"></div>`;
+  renderPlays();
+  $("#moneyGo").onclick = runMoney;
+}
+async function runMoney() {
+  moneyProfile.notes = $("#mnotes").value.trim();
+  try { localStorage.setItem("jr_money", JSON.stringify(moneyProfile)); } catch {}
+  const btn = $("#moneyGo");
+  btn.disabled = true; btn.textContent = t("money_wait");
+  try {
+    const body = { notes: moneyProfile.notes };
+    for (const k of ["code", "audience", "hours", "goal"]) body[k] = MONEY_KEYS[k][moneyProfile[k]];
+    const r = await fetch("/api/money-now", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    moneyFit = d.fit;
+  } catch { moneyFit = null; }
+  renderPlays();
+  btn.disabled = false; btn.textContent = t("money_btn");
+  $("#moneyRes").scrollIntoView({ behavior: "smooth" });
+}
+view.addEventListener("click", e => {
+  const b = e.target.closest("[data-mk]");
+  if (b) {
+    moneyProfile[b.dataset.mk] = +b.dataset.mv; moneyFit = null;
+    $$(`[data-mk="${b.dataset.mk}"]`).forEach(x => x.classList.toggle("on", x === b));
+    try { localStorage.setItem("jr_money", JSON.stringify(moneyProfile)); } catch {}
+    renderPlays();
+  }
+  const c = e.target.closest("[data-copy]");
+  if (c) { navigator.clipboard?.writeText(c.dataset.copy); c.textContent = t("copied2"); setTimeout(() => c.textContent = t("copy"), 1500); }
+});
+view.addEventListener("change", e => {
+  const cb = e.target.closest("[data-step]");
+  if (!cb) return;
+  const [k, j] = cb.dataset.step.split(":");
+  let done = [];
+  try { done = JSON.parse(localStorage.getItem("jr_steps_" + k) || "[]"); } catch {}
+  done = cb.checked ? [...new Set([...done, +j])] : done.filter(x => x !== +j);
+  try { localStorage.setItem("jr_steps_" + k, JSON.stringify(done)); } catch {}
+});
+
 // ---------------------------------------------------------------- carte mentale
 function mapTree() {
   const fr = lang === "fr";
@@ -722,6 +851,7 @@ function applyLang() {
   if (x && CFG.x) x.innerHTML = `<a href="${CFG.x}" target="_blank" rel="noopener">X · @${CFG.x.split("/").pop()}</a>`;
   if (!$("#tabMap")) $("#tabs").insertAdjacentHTML("beforeend", `<a href="#/map" data-r="map" id="tabMap">${t("nav_map")}</a>`);
   else $("#tabMap").textContent = t("nav_map");
+  if (!$("#moneyBtn")) $("#openSearch").insertAdjacentHTML("beforebegin", `<a class="money-btn" id="moneyBtn" href="#/money" data-r="money">💸 <span>${t("nav_money")}</span></a>`);
 }
 function route() {
   const h = location.hash.slice(1) || "/";
@@ -744,6 +874,7 @@ function route() {
   else if (r === "people") pagePeople();
   else if (r === "all") feedPage({ title: t("all_title"), lead: t("all_lead"), base: POSTS, params });
   else if (r === "map") pageMap();
+  else if (r === "money") pageMoney();
   else pageHome();
   if (prev.split("|")[1] !== path) window.scrollTo({ top: 0 });
 }

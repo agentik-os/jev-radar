@@ -281,3 +281,44 @@ mark { background: color-mix(in srgb, var(--acc) 35%, transparent); color: var(-
 .skeleton { height: 60vh; display: grid; place-items: center; color: var(--muted); font: 13px var(--mono); }
 @media (max-width: 960px) { .search-btn { min-width: 0; } .search-btn span, .search-btn kbd { display: none; } .discord-btn span { display: none; } }
 @media (max-width: 720px) { .top-in { flex-wrap: wrap; gap: 10px; } .tabs { order: 3; width: 100%; } .hero { padding-top: 40px; } .cta { padding: 26px; } }
+
+/* ---------- money now ---------- */
+.money-btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 700; font-size: 14px; white-space: nowrap;
+  color: var(--acc-ink); background: var(--acc); border-radius: 10px; padding: 7px 12px; box-shadow: 0 0 0 0 var(--acc); animation: moneyPulse 2.4s infinite; margin-left: auto; }
+.money-btn + .search-btn { margin-left: 0; }
+@keyframes moneyPulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--acc) 55%, transparent); } 70% { box-shadow: 0 0 0 10px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+.money-hero { font-size: 17px; padding: 13px 22px; border-radius: 14px; box-shadow: 0 16px 40px -14px var(--acc); }
+.money-form { display: flex; flex-direction: column; gap: 16px; }
+.mqs { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.mq label { display: block; font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.seg.mini { margin: 0; flex-wrap: wrap; }
+.seg.mini button { padding: 6px 11px; font-size: 13.5px; }
+.money-form textarea { width: 100%; min-height: 64px; resize: vertical; background: var(--bg2); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font: 15px var(--sans); }
+.money-go { align-self: flex-start; font-size: 16px; padding: 12px 22px; border-radius: 12px; }
+.plays-big { display: grid; gap: 14px; }
+.play { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; }
+.play.big { border-color: color-mix(in srgb, var(--acc) 35%, var(--line)); background: linear-gradient(160deg, var(--acc-soft), transparent 45%), var(--card); }
+.play-top { display: flex; gap: 14px; align-items: center; }
+.play-rank { font: 600 26px var(--mono); color: var(--acc); width: 34px; flex: none; }
+.play-title { flex: 1; min-width: 0; }
+.play-title b { font-size: 19px; letter-spacing: -.01em; display: block; margin-bottom: 6px; }
+.play:not(.big) .play-title b { font-size: 16px; }
+.play-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+.play-pitch { margin: 0; color: var(--ink2); }
+.play-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 4px; }
+@media (max-width: 800px) { .play-grid { grid-template-columns: 1fr; } }
+.play h4 { margin: 6px 0 8px; font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.steps { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14.5px; }
+.steps label { cursor: pointer; }
+.steps input { accent-color: var(--acc); margin-right: 4px; }
+.pay { margin: 0; font-weight: 600; }
+.hook { position: relative; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 12px 46px; }
+.hook pre { margin: 0; white-space: pre-wrap; font: 14px/1.5 var(--sans); color: var(--ink); }
+.hook .btn { position: absolute; right: 10px; bottom: 10px; }
+.btn.small { padding: 5px 10px; font-size: 12.5px; border-radius: 8px; }
+.evidence { display: inline-block; margin-top: 10px; color: var(--acc); text-decoration: none; font-size: 13.5px; font-weight: 600; }
+.play-more summary { cursor: pointer; color: var(--acc); font-size: 13.5px; font-weight: 600; }
+.play-more .steps { margin: 10px 0; }
+.paybox { margin-top: 14px; }
+.paybox ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+@media (max-width: 960px) { .money-btn span { display: none; } }

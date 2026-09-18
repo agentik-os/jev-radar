@@ -1,6 +1,6 @@
 """Autopost horaire : cite (quote-post) le meilleur post du Top 100 pas encore partagé, avec un commentaire.
 
-Publication via Composio (compte X relié sous l'alias COMPOSIO_ACCOUNT, `composio link twitter`),
+Publication via Composio (premier compte X actif relié par `composio link twitter`),
 ou à défaut via des clés X OAuth 1.0a dans ~/.config/x-autopost/.env
 (X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET).
 Sécurité : rien n'est publié tant que ~/.config/x-autopost/.env ne contient pas X_AUTOPOST_ENABLED=1 ;
@@ -18,7 +18,6 @@ MAX_PER_DAY = 24
 MAX_AGE_DAYS = 10
 SELF = "agentik_os"
 SITE_URL = "https://jev.agentik-os.com"
-COMPOSIO_ACCOUNT = "x_agentik"
 
 CAT = {"build_demo": "Built with Jev", "integration": "Jev integration", "explainer": "Jev explained",
        "official": "From TypeSafe", "news": "Jev news", "opinion": "Jev take", "critique": "The other side of the Jev debate"}
@@ -76,9 +75,9 @@ def oauth_post(url, body, env):
         return json.load(r)
 
 
-def composio_post(text, quote_id):
+def composio_post(text, quote_id, account):
     """Publie via Composio ; renvoie l'id du post ou lève une erreur."""
-    r = subprocess.run(["composio", "execute", "TWITTER_CREATION_OF_A_POST", "--account", COMPOSIO_ACCOUNT,
+    r = subprocess.run(["composio", "execute", "TWITTER_CREATION_OF_A_POST", "--account", account,
                         "-d", json.dumps({"text": text, "quote_tweet_id": quote_id})],
                        capture_output=True, text=True, timeout=120)
     out = json.loads(r.stdout or "{}")
@@ -88,14 +87,16 @@ def composio_post(text, quote_id):
     return (data.get("data") or data).get("id")
 
 
-def composio_ready():
+def composio_account():
+    """Sélecteur (alias ou word_id) du premier compte X actif dans Composio, sinon None."""
     if not shutil.which("composio"):
-        return False
+        return None
     r = subprocess.run(["composio", "connections", "list", "--toolkit", "twitter"], capture_output=True, text=True, timeout=60)
     try:
-        return any(c.get("alias") == COMPOSIO_ACCOUNT and c.get("status") == "ACTIVE" for c in json.loads(r.stdout).get("twitter", []))
+        active = [c for c in json.loads(r.stdout).get("twitter", []) if c.get("status") == "ACTIVE"]
     except Exception:
-        return False
+        return None
+    return (active[0].get("alias") or active[0].get("word_id")) if active else None
 
 
 def main():
@@ -111,7 +112,8 @@ def main():
     write_json(DATA / "autopost_preview.json", preview, indent=1)
 
     env = load_env()
-    use_composio = composio_ready()
+    account = composio_account()
+    use_composio = bool(account)
     has_keys = all(env.get(k) for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET"))
     if env.get("X_AUTOPOST_ENABLED") != "1" or not (use_composio or has_keys):
         print(f"autopost : mode aperçu ({len(candidates)} candidats, composio={'ok' if use_composio else 'non relié'}), rien publié")
@@ -124,7 +126,7 @@ def main():
     text = compose(p, niches)
     try:
         if use_composio:
-            tid = composio_post(text, p["id"])
+            tid = composio_post(text, p["id"], account)
         else:
             tid = oauth_post("https://api.x.com/2/tweets", {"text": text, "quote_tweet_id": p["id"]}, env).get("data", {}).get("id")
     except (urllib.error.HTTPError, RuntimeError, subprocess.SubprocessError, json.JSONDecodeError) as e:
