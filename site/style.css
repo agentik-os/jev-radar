@@ -354,3 +354,10 @@ mark { background: color-mix(in srgb, var(--acc) 35%, transparent); color: var(-
 .pulse { width: 11px; height: 11px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 0 0 var(--acc); animation: moneyPulse 1.8s infinite; flex: none; }
 .ago { color: var(--acc); font-weight: 600; }
 .rail { align-items: start; }
+
+/* ---------- soutien (Buy Me a Coffee) ---------- */
+.bmc-btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 700; font-size: 14px; white-space: nowrap;
+  background: #ffdd00; color: #0d0c22 !important; border-radius: 10px; padding: 7px 12px; transition: transform .15s, filter .15s; }
+.bmc-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.foot .bmc-btn { margin-top: 4px; }
+@media (max-width: 960px) { .top .bmc-btn span { display: none; } }

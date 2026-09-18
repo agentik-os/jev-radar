@@ -10,7 +10,7 @@ const view = $("#view");
 const T = {
   en: {
     nav_home: "Live", nav_builds: "Builds", nav_opps: "Opportunities", nav_top: "Top 100", nav_people: "People", nav_all: "Everything", nav_map: "Map",
-    search_short: "Search", join: "Join Discord", follow: "Follow",
+    search_short: "Search", join: "Join Discord", support: "Support", support_long: "Support the project", follow: "Follow",
     hero_live: (m, n) => `LIVE · updated ${m} · ${n} posts tracked`,
     hero_h: "Everything happening with <em>Jev</em>, live.",
     hero_p: "Every post, demo, integration and debate about TypeSafe's System One model on X. Classified by Jev itself and updated live, every few minutes, with a leaderboard of the businesses worth building.",
@@ -74,7 +74,7 @@ const T = {
   },
   fr: {
     nav_home: "En direct", nav_builds: "Démos", nav_opps: "Opportunités", nav_top: "Top 100", nav_people: "Personnes", nav_all: "Tout", nav_map: "Carte",
-    search_short: "Rechercher", join: "Rejoindre le Discord", follow: "Suivre",
+    search_short: "Rechercher", join: "Rejoindre le Discord", support: "Soutenir", support_long: "Soutenir le projet", follow: "Suivre",
     hero_live: (m, n) => `EN DIRECT · mis à jour ${m} · ${n} posts suivis`,
     hero_h: "Tout ce qui se passe autour de <em>Jev</em>, en direct.",
     hero_p: "Chaque post, démo, intégration et débat sur le modèle System One de TypeSafe sur X. Classé par Jev lui-même et mis à jour en direct, toutes les quelques minutes, avec un classement des business à construire.",
