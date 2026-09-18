@@ -129,8 +129,8 @@ def main():
                 break
             for handle, found, ok in pool.map(timeline, jobs):
                 a = accounts[handle.lower()]
-                if ok:
-                    a["last_checked"] = now
+                a["last_checked"] = now  # même en échec (compte suspendu, privé…) : on réessaiera dans 6 h
+                a["failed"] = not ok
                 for t in found:
                     if keep(t):
                         a["jev_posts"] += 1
