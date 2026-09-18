@@ -15,6 +15,7 @@ commit_local() {  # garde l'état localement (sans pousser) pour que le prochain
 git pull --rebase --quiet
 cd pipeline
 if [ "$MODE" = fast ]; then
+  uv run --project .. python replies.py || true
   uv run --project .. --extra ci python crawl.py --fast
   if [ "$(cat ../data/last_crawl_new.txt 2>/dev/null || echo 0)" = "0" ]; then cd ..; commit_local; echo "rien de nouveau"; exit 0; fi
   last=$(git -C .. log -1 --format=%ct origin/main 2>/dev/null || echo 0)
@@ -23,6 +24,7 @@ if [ "$MODE" = fast ]; then
   uv run --project .. python analyze.py
   uv run --project .. python build.py
 else
+  uv run --project .. python replies.py || true
   uv run --project .. --extra ci python crawl.py
   uv run --project .. --extra ci python transcribe.py
   uv run --project .. python analyze.py

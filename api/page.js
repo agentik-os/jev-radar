@@ -51,6 +51,7 @@ function metaFor(path, query, d) {
       image: img || `${SITE}/og.png`, url: `${SITE}/p/${p.id}`, alt: `Post by @${p.a.h} about Jev`,
     };
   }
+  if (parts[0] === "post") return { ...base, title: "Jev Radar · /post", noindex: true };
   const sec = SECTIONS[parts[0]];
   if (!sec) return base;
   const m = { title: `${sec[0]} · Jev Radar`, desc: sec[1], image: `${SITE}/og/${sec[2]}.png`, url: SITE + path, alt: sec[0] };
@@ -82,7 +83,7 @@ function block(m) {
 <meta name="twitter:description" content="${d}">
 <meta name="twitter:image" content="${img}">
 <meta name="twitter:image:alt" content="${alt}">
-<link rel="canonical" href="${u}">
+<link rel="canonical" href="${u}">${m.noindex ? '\n<meta name="robots" content="noindex,nofollow">' : ""}
 <!--/META-->`;
 }
 

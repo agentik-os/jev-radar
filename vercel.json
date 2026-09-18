@@ -47,7 +47,7 @@
       "destination": "/api/page?path=/p/:id"
     },
     {
-      "source": "/:section(builds|opportunities|money|top|people|all|map)",
+      "source": "/:section(builds|opportunities|money|top|people|all|map|post)",
       "destination": "/api/page?path=/:section"
     },
     {

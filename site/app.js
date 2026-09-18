@@ -751,6 +751,109 @@ view.addEventListener("change", e => {
   try { localStorage.setItem("jr_steps_" + k, JSON.stringify(done)); } catch {}
 });
 
+// ---------------------------------------------------------------- /post (page cachée : réponses manuelles)
+const SITE_URL = "https://jev.agentik-os.com";
+let REPLIED = {};
+const REPLY_TPL = {
+  build_demo: [
+    "This is one of the best Jev builds so far 🔥\n\nI added it to Jev Radar: a free page that tracks everything built with Jev, in one place.\n\n{url}",
+    "Great build. It's now on Jev Radar with a plain-English breakdown of how it works.\n\nEvery Jev project, demo and idea, free and updated hourly:\n{url}",
+    "Love this one. Added to Jev Radar, where I centralize every Jev build, integration and business idea. Free:\n{url}",
+  ],
+  integration: [
+    "Big one for the Jev ecosystem. I'm tracking every Jev integration on Jev Radar, free and updated every hour:\n{url}",
+    "Added to the \"where Jev runs\" list on Jev Radar. Everything about Jev in one place, free:\n{url}",
+  ],
+  explainer: [
+    "Great explainer. For anyone who wants the full picture: Jev Radar centralizes every Jev post, demo and idea. Free:\n{url}",
+    "Saved this in Jev Radar's Learn section. Everything about Jev, one free page, updated hourly:\n{url}",
+  ],
+  critique: [
+    "Fair point, and worth hearing. Jev Radar tracks both sides of the Jev debate, skeptics included. Free:\n{url}",
+  ],
+  question: [
+    "This might help: Jev Radar puts every Jev demo, explainer and integration in one free page:\n{url}",
+  ],
+  default: [
+    "Hey, I put everything about Jev in one place: every post, demo and business idea. Free, updated hourly.\n\nYours is on it:\n{url}",
+    "If you're following Jev: I centralize every post, build and money idea on one free page, updated every hour.\n\n{url}",
+    "Jev moves fast, so I built one free page that tracks all of it: posts, builds, integrations, niches.\n\n{url}",
+  ],
+};
+function replyFor(p) {
+  const list = REPLY_TPL[p.j.category] || REPLY_TPL.default;
+  const h = [...p.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 997, 7);
+  return list[h % list.length].replace("{url}", `${SITE_URL}/p/${p.id}`);
+}
+const tweetLen = s => s.replace(/https?:\/\/\S+/g, "x".repeat(23)).length;
+const postState = () => { try { return JSON.parse(localStorage.getItem("jr_post_state") || "{}"); } catch { return {}; } };
+const setPostState = (id, v) => { const s = postState(); if (v) s[id] = v; else delete s[id]; try { localStorage.setItem("jr_post_state", JSON.stringify(s)); } catch {} };
+let postFilter = "todo";
+async function pagePost() {
+  document.querySelector('meta[name="robots"]') || document.head.insertAdjacentHTML("beforeend", '<meta name="robots" content="noindex,nofollow">');
+  try { REPLIED = await fetch("/data/replied.json", { cache: "no-cache" }).then(r => r.json()); } catch { REPLIED = {}; }
+  renderPostPage();
+}
+function renderPostPage() {
+  const st = postState();
+  const all = MAIN.filter(p => p.a.h.toLowerCase() !== "agentik_os" && !["meme"].includes(p.j.category));
+  const status = p => REPLIED[p.id] ? "verified" : st[p.id] === "done" ? "done" : st[p.id] === "opened" ? "opened" : "todo";
+  const seen = (() => { try { return +localStorage.getItem("jr_post_seen") || 0; } catch { return 0; } })();
+  const counts = { todo: 0, opened: 0, done: 0, verified: 0 };
+  all.forEach(p => counts[status(p)]++);
+  const list = all.filter(p => postFilter === "all" || (postFilter === "todo" ? ["todo", "opened"].includes(status(p)) : ["done", "verified"].includes(status(p))))
+    .sort((a, b) => postFilter === "new" ? b.c - a.c : (b.c > seen) - (a.c > seen) || b.m[4] - a.m[4]);
+  view.innerHTML = `
+  <div class="page-head"><div class="eyebrow">/post · ${lang === "fr" ? "page privée" : "private page"}</div>
+    <h1>${lang === "fr" ? "Réponses à <em>poster</em>" : "Replies to <em>post</em>"}</h1>
+    <p>${lang === "fr" ? "Un commentaire prêt pour chaque post sur Jev. Clique « Répondre sur X », poste, puis marque-le. Tes réponses publiées depuis @Agentik_os sont validées automatiquement." : "A ready reply for every post about Jev. Click Reply on X, post it, then mark it. Replies published from @Agentik_os are verified automatically."}</p></div>
+  <div class="method">
+    <div><b>${counts.todo + counts.opened}</b><span>${lang === "fr" ? "à faire" : "to do"}</span></div>
+    <div><b style="color:var(--acc)">${counts.verified}</b><span>${lang === "fr" ? "vérifiés sur X ✓" : "verified on X ✓"}</span></div>
+    <div><b>${counts.done}</b><span>${lang === "fr" ? "marqués à la main" : "marked by hand"}</span></div>
+    <div><b>${all.filter(p => p.c > seen).length}</b><span>${lang === "fr" ? "nouveaux depuis ta dernière visite" : "new since your last visit"}</span></div>
+  </div>
+  <div class="seg">${[["todo", lang === "fr" ? "À faire" : "To do"], ["new", lang === "fr" ? "Plus récents" : "Newest"], ["done", lang === "fr" ? "Faits" : "Done"], ["all", lang === "fr" ? "Tous" : "All"]]
+    .map(([k, l]) => `<button data-pf="${k}" class="${postFilter === k ? "on" : ""}">${l}</button>`).join("")}</div>
+  <div class="replies">${list.slice(0, 150).map(p => {
+    const s = status(p), txt = replyFor(p);
+    return `<div class="rrow ${s}" data-rid="${p.id}">
+      <div class="rpost">
+        <div class="who"><img src="${esc(p.a.av)}" alt="" loading="lazy"><div class="nm"><b>${esc(p.a.n)}${p.c > seen ? ' <span class="untapped">NEW</span>' : ""}</b><span>@${esc(p.a.h)} · ${fmtN(p.a.f)} ${t("followers")} · ${fmtDate(p.c)}</span></div></div>
+        <div class="ptext" style="-webkit-line-clamp:4">${esc(p.t)}</div>
+        <div class="metrics"><span>${ICON.eye}${fmtN(p.m[4])}</span><span>${ICON.heart}${fmtN(p.m[0])}</span><span>💬 ${fmtN(p.m[2])}</span><a href="${esc(p.u)}" target="_blank" rel="noopener">${t("view_on_x")}</a></div>
+      </div>
+      <div class="rreply">
+        <textarea data-rtxt="${p.id}" rows="5">${esc(txt)}</textarea>
+        <div class="rbar"><span class="rlen" data-rlen="${p.id}">${tweetLen(txt)}/280</span>
+          ${s === "verified" ? `<a class="rstat ok" href="${esc(REPLIED[p.id].url)}" target="_blank" rel="noopener">✓ ${lang === "fr" ? "posté, vérifié" : "posted, verified"}</a>`
+            : `<button class="btn" data-rgo="${p.id}">${lang === "fr" ? "Répondre sur X ↗" : "Reply on X ↗"}</button>
+               <button class="btn ghost" data-rdone="${p.id}">${s === "done" ? (lang === "fr" ? "Annuler" : "Undo") : (lang === "fr" ? "Marquer posté ✓" : "Mark posted ✓")}</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join("") || `<div class="empty">${lang === "fr" ? "Tout est fait 🎉" : "All done 🎉"}</div>`}</div>`;
+  try { localStorage.setItem("jr_post_seen", String(Math.floor(now()))); } catch {}
+}
+view.addEventListener("click", e => {
+  const f = e.target.closest("[data-pf]");
+  if (f) { postFilter = f.dataset.pf; renderPostPage(); return; }
+  const g = e.target.closest("[data-rgo]");
+  if (g) {
+    const id = g.dataset.rgo, txt = $(`[data-rtxt="${id}"]`).value;
+    window.open(`https://x.com/intent/post?in_reply_to=${id}&text=${encodeURIComponent(txt)}`, "_blank", "noopener");
+    setPostState(id, "opened");
+    g.closest(".rrow").classList.add("opened");
+    return;
+  }
+  const d = e.target.closest("[data-rdone]");
+  if (d) { const id = d.dataset.rdone; setPostState(id, postState()[id] === "done" ? null : "done"); renderPostPage(); }
+});
+view.addEventListener("input", e => {
+  const ta = e.target.closest("[data-rtxt]");
+  if (ta) { const el = $(`[data-rlen="${ta.dataset.rtxt}"]`), n = tweetLen(ta.value); el.textContent = `${n}/280`; el.classList.toggle("over", n > 280); }
+});
+
 // ---------------------------------------------------------------- carte mentale
 function mapTree() {
   const fr = lang === "fr";
@@ -875,6 +978,7 @@ function route() {
   else if (r === "all") feedPage({ title: t("all_title"), lead: t("all_lead"), base: POSTS, params });
   else if (r === "map") pageMap();
   else if (r === "money") pageMoney();
+  else if (r === "post") pagePost();
   else pageHome();
   if (prev.split("|")[1] !== path) window.scrollTo({ top: 0 });
 }
