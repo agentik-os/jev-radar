@@ -49,14 +49,13 @@ def main():
         size += len(body)
         url = put(tok, f"{SLUG}/{f.name}", body)
     want = json.loads((SITE / "data/meta.json").read_text())["updated"]
-    # le CDN Blob garde les fichiers 60 s (x-cache-control-max-age) : on patiente avant de conclure
     ok = False
-    for _ in range(9):
-        with urllib.request.urlopen(url + f"?check={time.time()}", timeout=30) as r:
+    for _ in range(7):  # le CDN de Blob peut servir l'ancienne version quelques secondes après l'écriture
+        with urllib.request.urlopen(url + f"?check={time.time_ns()}", timeout=30) as r:
             ok = abs(json.load(r)["updated"] - want) < 1
         if ok:
             break
-        time.sleep(10)
+        time.sleep(5)
     print(f"publish : {len(files)} fichiers, {size/1e6:.1f} Mo -> Blob {SLUG}/ ; meta public "
           f"{'à jour' if ok else 'PAS à jour'}")
     sys.exit(0 if ok else 1)
