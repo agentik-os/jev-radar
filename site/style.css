@@ -1,24 +1,33 @@
 :root {
-  --bg: #09090b; --bg2: #0e0e11; --card: #131316; --card2: #18181c; --line: #232329; --line2: #2e2e36;
-  --ink: #f4f4f5; --ink2: #c9c9cf; --muted: #8a8a94; --faint: #5c5c66;
-  --acc: #c5f82a; --acc-ink: #0b0d02; --acc-soft: rgba(197, 248, 42, .12);
-  --cyan: #5ad7ff; --pink: #ff6fb5; --amber: #ffb547; --violet: #a78bfa; --red: #ff6b5b; --green: #4ade80;
-  --serif: "Instrument Serif", Georgia, serif; --sans: Inter, -apple-system, system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
-  --r: 14px; --shadow: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 20px 40px -24px rgba(0, 0, 0, .6);
+  /* charte TypeSafe : encre #1E1E1E, blanc #FEFEFE, gris #DEDEDE, rose #F386A1, magenta #D45BB6, ciel #D6EBFA */
+  --brand-pink: #f386a1; --brand-magenta: #d45bb6; --brand-sky: #d6ebfa; --brand-ink: #1e1e1e;
+  --bg: #141414; --bg2: #191919; --card: #1e1e1e; --card2: #252525; --line: #2e2e2e; --line2: #3b3b3b;
+  --ink: #fefefe; --ink2: #dedede; --muted: #9a9a9a; --faint: #666666;
+  --acc: #f386a1; --acc-ink: #1e1e1e; --acc-soft: rgba(243, 134, 161, .14);
+  --cloud-a: rgba(212, 91, 182, .30); --cloud-b: rgba(243, 134, 161, .22); --cloud-c: rgba(120, 170, 220, .16); --dot: rgba(254, 254, 254, .10);
+  --cyan: #8cc8f0; --pink: #f386a1; --amber: #f5b76b; --violet: #d45bb6; --red: #ff6b6b; --green: #5fd49a;
+  --serif: "Host Grotesk", Inter, system-ui, sans-serif; --sans: "Host Grotesk", Inter, -apple-system, system-ui, sans-serif; --mono: "Fragment Mono", "JetBrains Mono", ui-monospace, monospace;
+  --r: 8px; --shadow: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 20px 40px -24px rgba(0, 0, 0, .6);
   color-scheme: dark;
 }
 :root[data-theme="light"] {
-  --bg: #f6f5f1; --bg2: #efeee9; --card: #ffffff; --card2: #fafaf7; --line: #e4e2da; --line2: #d6d4cb;
-  --ink: #141416; --ink2: #34343a; --muted: #6b6b73; --faint: #a3a3aa;
-  --acc: #4f7a00; --acc-ink: #ffffff; --acc-soft: rgba(79, 122, 0, .1);
-  --cyan: #0a84b8; --pink: #c2317a; --amber: #b46a00; --violet: #6d4fd6; --red: #c83a2a; --green: #16803c;
+  --bg: #fefefe; --bg2: #f6f6f6; --card: #ffffff; --card2: #fafafa; --line: #dedede; --line2: #c4c4c4;
+  --ink: #1e1e1e; --ink2: #3a3a3a; --muted: #6b6b6b; --faint: #a0a0a0;
+  --acc: #b0368f; --acc-ink: #ffffff; --acc-soft: rgba(212, 91, 182, .10);
+  --cloud-a: rgba(212, 91, 182, .38); --cloud-b: rgba(243, 134, 161, .34); --cloud-c: rgba(190, 225, 250, .85); --dot: rgba(30, 30, 30, .10);
+  --cyan: #2a7fb8; --pink: #c2417f; --amber: #a86400; --violet: #b0368f; --red: #c0392b; --green: #1d7f4a;
   --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 12px 30px -20px rgba(0, 0, 0, .25);
   color-scheme: light;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); overflow-x: hidden;
-  background-image: radial-gradient(1200px 500px at 70% -200px, var(--acc-soft), transparent 70%); background-repeat: no-repeat; }
+  background-image: radial-gradient(760px 420px at 8% -140px, var(--cloud-a), transparent 70%), radial-gradient(820px 460px at 94% -160px, var(--cloud-b), transparent 70%),
+    radial-gradient(900px 420px at 50% -220px, var(--cloud-c), transparent 75%); background-repeat: no-repeat; }
+/* trame pointillée façon TypeSafe, estompée sous le hero */
+body::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 560px; pointer-events: none; z-index: -1;
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.3px); background-size: 5px 5px;
+  -webkit-mask-image: linear-gradient(#000, transparent); mask-image: linear-gradient(#000, transparent); }
 a { color: inherit; }
 button { font: inherit; color: inherit; }
 kbd { font: 11px var(--mono); border: 1px solid var(--line2); border-radius: 5px; padding: 1px 5px; color: var(--muted); }
@@ -30,7 +39,7 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line2); border-radius: 5px
   background: color-mix(in srgb, var(--bg) 78%, transparent); border-bottom: 1px solid var(--line); }
 .top-in { max-width: 1240px; margin: 0 auto; padding: 10px 20px; display: flex; align-items: center; gap: 18px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; letter-spacing: -.01em; font-size: 17px; white-space: nowrap; }
-.brand em { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 20px; color: var(--acc); }
+.brand em { font-family: var(--sans); font-style: normal; font-weight: inherit; font-size: 20px; color: var(--acc); }
 .brand.small { font-size: 15px; } .brand.small em { font-size: 18px; }
 .radar { position: relative; width: 22px; height: 22px; display: inline-block; }
 .radar i, .radar b { position: absolute; border-radius: 50%; inset: 0; }
@@ -65,7 +74,7 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line2); border-radius: 5px
 .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 10px var(--acc); animation: blink 1.6s infinite; }
 @keyframes blink { 50% { opacity: .35; } }
 .hero h1 { font-size: clamp(38px, 6.4vw, 76px); line-height: 1.02; letter-spacing: -.035em; margin: 22px auto 14px; max-width: 900px; font-weight: 600; }
-.hero h1 em { font-family: var(--serif); font-weight: 400; font-style: italic; color: var(--acc); letter-spacing: -.01em; }
+.hero h1 em { font-family: var(--sans); font-style: normal; font-weight: inherit; color: var(--acc); letter-spacing: -.01em; }
 .hero p.lead { color: var(--ink2); font-size: clamp(16px, 2vw, 19px); max-width: 680px; margin: 0 auto; }
 .hero-search { max-width: 680px; margin: 30px auto 14px; display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--line2);
   border-radius: 16px; padding: 14px 16px; cursor: text; box-shadow: var(--shadow); color: var(--muted); transition: border-color .15s; }
@@ -91,13 +100,13 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line2); border-radius: 5px
 section.sec { margin: 64px 0 0; }
 .sec-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
 .sec-head h2 { margin: 0; font-size: clamp(24px, 3vw, 34px); letter-spacing: -.03em; font-weight: 600; line-height: 1.1; }
-.sec-head h2 em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--acc); }
+.sec-head h2 em { font-family: var(--sans); font-style: normal; font-weight: inherit; color: var(--acc); }
 .sec-head p { margin: 6px 0 0; color: var(--muted); max-width: 640px; }
 .sec-head .more { color: var(--acc); text-decoration: none; font-weight: 600; font-size: 14px; white-space: nowrap; }
 .eyebrow { font: 12px var(--mono); color: var(--acc); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
 .page-head { padding: 44px 0 10px; }
 .page-head h1 { font-size: clamp(32px, 5vw, 56px); letter-spacing: -.035em; margin: 0 0 10px; line-height: 1.05; font-weight: 600; }
-.page-head h1 em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--acc); }
+.page-head h1 em { font-family: var(--sans); font-style: normal; font-weight: inherit; color: var(--acc); }
 .page-head p { color: var(--ink2); max-width: 760px; margin: 0; font-size: 17px; }
 
 /* ---------- cartes de posts ---------- */
@@ -261,7 +270,7 @@ mark { background: color-mix(in srgb, var(--acc) 35%, transparent); color: var(-
 /* ---------- appel communauté ---------- */
 .cta { position: relative; overflow: hidden; border-radius: 22px; padding: 42px; margin: 70px 0 0; background: radial-gradient(600px 300px at 90% 0%, rgba(88, 101, 242, .45), transparent 70%), radial-gradient(500px 260px at 0% 100%, var(--acc-soft), transparent 70%), var(--card); border: 1px solid var(--line2); }
 .cta h2 { font-size: clamp(26px, 3.6vw, 42px); letter-spacing: -.03em; margin: 0 0 10px; line-height: 1.08; font-weight: 600; max-width: 700px; }
-.cta h2 em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--acc); }
+.cta h2 em { font-family: var(--sans); font-style: normal; font-weight: inherit; color: var(--acc); }
 .cta p { color: var(--ink2); max-width: 620px; margin: 0 0 22px; }
 .cta .row { display: flex; gap: 10px; flex-wrap: wrap; }
 .cta .discord-btn, .cta .x-btn { padding: 11px 18px; font-size: 15px; border-radius: 12px; }

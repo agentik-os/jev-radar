@@ -21,6 +21,15 @@
           "value": "public, max-age=0, s-maxage=600"
         }
       ]
+    },
+    {
+      "source": "/post(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ],
   "functions": {
@@ -29,6 +38,10 @@
     }
   },
   "rewrites": [
+    {
+      "source": "/post",
+      "destination": "/post.html"
+    },
     {
       "source": "/p/:id",
       "destination": "/api/page?path=/p/:id"

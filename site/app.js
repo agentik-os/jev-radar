@@ -785,7 +785,7 @@ function mapTree() {
     ],
   };
 }
-const MM_COLORS = ["#ffb547", "#ff6fb5", "#5ad7ff", "#c5f82a", "#a78bfa", "#ff6b5b", "#4ade80", "#f59e0b"];
+const MM_COLORS = ["#d45bb6", "#f386a1", "#8cc8f0", "#f5b76b", "#abbab9", "#ff6b6b", "#5fd49a", "#b0368f"];
 let mmOpen = new Set(["root", "0", "1", "2", "3"]);
 function pageMap() {
   view.innerHTML = `<div class="page-head"><h1>${t("map_title")}</h1><p>${t("map_lead")}</p></div><div class="mm-wrap" id="mm"></div>`;
