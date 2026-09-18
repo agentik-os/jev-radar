@@ -16,6 +16,7 @@ const T = {
     hero_p: "Every post, demo, integration and debate about TypeSafe's System One model on X. Classified by Jev itself and updated live, every few minutes, with a leaderboard of the businesses worth building.",
     hero_search: "Search posts, people, demos, transcripts, ideas…",
     k_posts: "posts", k_people: "people", k_views: "views", k_builds: "builds & demos", k_videos: "videos", k_code: "open source / free tools",
+    latest: "Latest posts, <em>live</em>", latest_p: "Every new post about Jev as it lands on X, refreshed every few minutes.",
     trending: "Trending <em>now</em>", trending_p: "The most engaging posts of the last 24 hours.",
     builds_h: "What people <em>built</em>", builds_p: "Real systems running on Jev, with how they work.",
     opps_h: "Where the <em>money</em> is", opps_p: "Niches ranked by passive-income potential, recomputed every hour from every post.",
@@ -79,6 +80,7 @@ const T = {
     hero_p: "Chaque post, démo, intégration et débat sur le modèle System One de TypeSafe sur X. Classé par Jev lui-même et mis à jour en direct, toutes les quelques minutes, avec un classement des business à construire.",
     hero_search: "Chercher des posts, personnes, démos, transcriptions, idées…",
     k_posts: "posts", k_people: "personnes", k_views: "vues", k_builds: "démos & systèmes", k_videos: "vidéos", k_code: "open source / outils gratuits",
+    latest: "Derniers posts, <em>en direct</em>", latest_p: "Chaque nouveau post sur Jev dès qu'il arrive sur X, rafraîchi toutes les quelques minutes.",
     trending: "En ce <em>moment</em>", trending_p: "Les posts les plus engageants des dernières 24 heures.",
     builds_h: "Ce que les gens ont <em>construit</em>", builds_p: "De vrais systèmes qui tournent sur Jev, avec leur fonctionnement.",
     opps_h: "Où est l'<em>argent</em>", opps_p: "Les niches classées selon leur potentiel de revenu passif, recalculées chaque heure à partir de tous les posts.",
@@ -336,7 +338,7 @@ function card(p, opts = {}) {
   const q = opts.q || "";
   const fresh = FRESH.has(p.id) && Date.now() - FRESH.get(p.id) < 15 * 60_000;
   return `<article class="post${fresh ? " fresh" : ""}" data-post="${p.id}">${fresh ? `<span class="fresh-badge">● NEW</span>` : ""}
-    <div class="who"><img src="${esc(p.a.av)}" alt="" loading="lazy"><div class="nm"><b>${hl(p.a.n, q)}</b><span>@${esc(p.a.h)} · ${fmtN(p.a.f)} ${t("followers")} · ${fmtDate(p.c)}</span></div>${opts.rank ? `<span class="rank-badge">#${p.rk}</span>` : ""}</div>
+    <div class="who"><img src="${esc(p.a.av)}" alt="" loading="lazy"><div class="nm"><b>${hl(p.a.n, q)}</b><span>@${esc(p.a.h)} · ${fmtN(p.a.f)} ${t("followers")} · ${opts.ago ? `<b class="ago" data-ago="${p.c}">${T[lang].ago(now() - p.c)}</b>` : fmtDate(p.c)}</span></div>${opts.rank ? `<span class="rank-badge">#${p.rk}</span>` : ""}</div>
     ${p.sys ? `<div class="sys"><b>${t("system")}</b>${esc(p.sys[lang] || p.sys.en)}</div>` : ""}
     <div class="ptext">${hl(p.t, q)}</div>
     ${p.q ? `<div class="qt">↪ @${esc(p.q.h)}: ${esc(p.q.t)}</div>` : ""}
@@ -480,6 +482,8 @@ function pageHome() {
     <div class="kpi"><b>${MAIN.filter(p => p.v.length).length}</b><span>${t("k_videos")}</span></div>
     <div class="kpi"><b>${MAIN.filter(p => p.j.open_source > .6).length}</b><span>${t("k_code")}</span></div>
   </div>
+  <section class="sec latest-sec"><div class="sec-head"><div><h2><span class="pulse"></span>${t("latest")}</h2><p>${t("latest_p")}</p></div><a class="more" href="/all?sort=date">${t("see_all")}</a></div>
+    <div class="rail">${[...MAIN].sort((a, b) => b.c - a.c).slice(0, 14).map(p => card(p, { ago: true })).join("")}</div></section>
   <section class="sec"><div class="sec-head"><div><h2>${t("trending")}</h2><p>${t("trending_p")}</p></div><a class="more" href="/all?sort=date">${t("see_all")}</a></div>
     <div class="rail">${trending.map(p => card(p)).join("")}</div></section>
   <section class="sec"><div class="sec-head"><div><h2>${t("builds_h")}</h2><p>${t("builds_p")}</p></div><a class="more" href="/builds">${t("see_all")}</a></div>
@@ -1011,6 +1015,7 @@ document.body.insertAdjacentHTML("beforeend", `<a class="discord-btn float-disco
 // ---------------------------------------------------------------- direct : nouveaux posts sans recharger
 let liveBanner = null;
 function liveAgo() {
+  $$("[data-ago]").forEach(el => el.textContent = T[lang].ago(now() - +el.dataset.ago));
   const el = $("#liveLabel");
   if (el && META.updated) el.textContent = T[lang].hero_live(T[lang].ago(now() - META.updated), META.posts.toLocaleString(lang));
 }
