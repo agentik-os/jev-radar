@@ -361,3 +361,8 @@ mark { background: color-mix(in srgb, var(--acc) 35%, transparent); color: var(-
 .bmc-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
 .foot .bmc-btn { margin-top: 4px; }
 @media (max-width: 960px) { .top .bmc-btn span { display: none; } }
+
+/* ---------- pastille « live » dans la barre du haut ---------- */
+.live-chip { display: inline-flex; align-items: center; gap: 6px; font: 11.5px var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 5px 10px; white-space: nowrap; }
+.live-chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 8px var(--acc); animation: blink 1.6s infinite; }
+@media (max-width: 1100px) { .live-chip { display: none; } }

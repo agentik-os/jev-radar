@@ -964,6 +964,7 @@ function applyLang() {
   if (x && CFG.x) x.innerHTML = `<a href="${CFG.x}" target="_blank" rel="noopener">X · @${CFG.x.split("/").pop()}</a>`;
   if (!$("#tabMap")) $("#tabs").insertAdjacentHTML("beforeend", `<a href="/map" data-r="map" id="tabMap">${t("nav_map")}</a>`);
   else $("#tabMap").textContent = t("nav_map");
+  if (!$("#liveChip")) $("#openSearch").insertAdjacentHTML("beforebegin", `<span class="live-chip" id="liveChip" title="Mise à jour automatique"><i></i><b id="liveChipTxt">live</b></span>`);
   if (!$("#moneyBtn")) $("#openSearch").insertAdjacentHTML("beforebegin", `<a class="money-btn" id="moneyBtn" href="/money" data-r="money">💸 <span>${t("nav_money")}</span></a>`);
 }
 function route() {
@@ -1015,6 +1016,8 @@ document.body.insertAdjacentHTML("beforeend", `<a class="discord-btn float-disco
 // ---------------------------------------------------------------- direct : nouveaux posts sans recharger
 let liveBanner = null;
 function liveAgo() {
+  const chip = $("#liveChipTxt");
+  if (chip && META.updated) chip.textContent = T[lang].ago(now() - META.updated);
   $$("[data-ago]").forEach(el => el.textContent = T[lang].ago(now() - +el.dataset.ago));
   const el = $("#liveLabel");
   if (el && META.updated) el.textContent = T[lang].hero_live(T[lang].ago(now() - META.updated), META.posts.toLocaleString(lang));
@@ -1026,13 +1029,24 @@ async function checkLive() {
     const before = new Set(POSTS.map(p => p.id));
     await load(true);
     const added = MAIN.filter(p => !before.has(p.id));
-    added.forEach(p => FRESH.set(p.id, Date.now()));
+    const addedAll = POSTS.filter(p => !before.has(p.id));   // réponses comprises
+    addedAll.forEach(p => FRESH.set(p.id, Date.now()));
     liveAgo();
-    if (!added.length) return;
     const r = (location.pathname.split("/")[1] || "home");
+    // sur l'accueil : la section « derniers posts » et les compteurs se mettent à jour sur place, où qu'on soit dans la page
+    const rail = $(".latest-sec .rail");
+    if (r === "home" && rail) {
+      rail.innerHTML = [...MAIN].sort((a, b) => b.c - a.c).slice(0, 14).map(p => card(p, { ago: true })).join("");
+      const kpis = [MAIN.length.toLocaleString(lang), AUTHORS.length.toLocaleString(lang), fmtN(META.views),
+        String(MAIN.filter(p => p.j.category === "build_demo").length), String(MAIN.filter(p => p.v.length).length),
+        String(MAIN.filter(p => p.j.open_source > .6).length)];
+      $$(".kpi b").forEach((el, i) => { if (kpis[i] !== undefined) el.textContent = kpis[i]; });
+    }
+    if (!addedAll.length) return;
+    if (added.length) flash(added.length);
     const calm = window.scrollY < 300 && modal.hidden && layer.hidden && ["home", "all"].includes(r) && !document.activeElement?.matches?.("input,textarea");
-    if (calm) { route(); return flash(added.length); }
-    showLiveBanner(added.length);
+    if (calm) return route();
+    if (added.length) showLiveBanner(added.length);
   } catch {}
 }
 function flash(n) {
@@ -1050,7 +1064,7 @@ function showLiveBanner(n) {
   liveBanner.onclick = () => { liveBanner.remove(); liveBanner = null; window.scrollTo({ top: 0 }); route(); };
   document.body.appendChild(liveBanner);
 }
-setInterval(checkLive, 60_000);
+setInterval(checkLive, 30_000);
 setInterval(liveAgo, 30_000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkLive(); });
 
