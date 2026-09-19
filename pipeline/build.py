@@ -173,7 +173,7 @@ def main():
 
     main_posts = [p for p in posts if not p["r"]]
     meta = {
-        "updated": now, "posts": len(posts), "main": len(main_posts),
+        "updated": now, "checked": now, "posts": len(posts), "main": len(main_posts),
         "authors": len({p["a"]["h"] for p in posts}),
         "views": sum(p["m"][4] for p in main_posts), "likes": sum(p["m"][0] for p in main_posts),
         "first": min(p["c"] for p in posts), "tracked_accounts": len(read_json(DATA / "crawl_state.json", {}).get("accounts", {})),

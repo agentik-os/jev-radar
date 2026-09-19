@@ -18,7 +18,10 @@ cd pipeline
 if [ "$MODE" = live ]; then
   # toutes les 3 min : comptes chauds, classement des seuls nouveaux posts, publication Blob (pas de push GitHub)
   uv run --project .. --extra ci python crawl.py --hot
-  if [ "$(cat ../data/last_crawl_new.txt 2>/dev/null || echo 0)" = "0" ]; then cd ..; commit_local; echo "rien de nouveau"; exit 0; fi
+  if [ "$(cat ../data/last_crawl_new.txt 2>/dev/null || echo 0)" = "0" ]; then
+    uv run --project .. python heartbeat.py || true   # « vérifié à l'instant » même sans nouveau post
+    cd ..; commit_local; echo "rien de nouveau"; exit 0
+  fi
   uv run --project .. python analyze.py
   uv run --project .. python build.py
   uv run --project .. python publish.py || echo "!! publish : le site en ligne n'a PAS été mis à jour"

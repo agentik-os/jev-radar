@@ -11,7 +11,7 @@ const T = {
   en: {
     nav_home: "Live", nav_builds: "Builds", nav_opps: "Opportunities", nav_top: "Top 100", nav_people: "People", nav_all: "Everything", nav_map: "Map",
     search_short: "Search", join: "Join Discord", support: "Support", support_long: "Support the project", follow: "Follow",
-    hero_live: (m, n) => `LIVE · updated ${m} · ${n} posts tracked`,
+    hero_live: (m, n) => `LIVE · last post ${m} · ${n} posts tracked`,
     hero_h: "Everything happening with <em>Jev</em>, live.",
     hero_p: "Every post, demo, integration and debate about TypeSafe's System One model on X. Classified by Jev itself and updated live, every few minutes, with a leaderboard of the businesses worth building.",
     hero_search: "Search posts, people, demos, transcripts, ideas…",
@@ -75,7 +75,7 @@ const T = {
   fr: {
     nav_home: "En direct", nav_builds: "Démos", nav_opps: "Opportunités", nav_top: "Top 100", nav_people: "Personnes", nav_all: "Tout", nav_map: "Carte",
     search_short: "Rechercher", join: "Rejoindre le Discord", support: "Soutenir", support_long: "Soutenir le projet", follow: "Suivre",
-    hero_live: (m, n) => `EN DIRECT · mis à jour ${m} · ${n} posts suivis`,
+    hero_live: (m, n) => `EN DIRECT · dernier post ${m} · ${n} posts suivis`,
     hero_h: "Tout ce qui se passe autour de <em>Jev</em>, en direct.",
     hero_p: "Chaque post, démo, intégration et débat sur le modèle System One de TypeSafe sur X. Classé par Jev lui-même et mis à jour en direct, toutes les quelques minutes, avec un classement des business à construire.",
     hero_search: "Chercher des posts, personnes, démos, transcriptions, idées…",
@@ -464,7 +464,7 @@ function pageHome() {
   ];
   view.innerHTML = `
   <section class="hero">
-    <span class="live" id="liveLabel">${T[lang].hero_live(T[lang].ago(now() - META.updated), META.posts.toLocaleString(lang))}</span>
+    <span class="live" id="liveLabel">${T[lang].hero_live(T[lang].ago(now() - Math.max(...MAIN.map(p => p.c), META.updated)), META.posts.toLocaleString(lang))}</span>
     <h1>${t("hero_h")}</h1>
     <p class="lead">${t("hero_p")}</p>
     <div class="hero-search" id="heroSearch">
@@ -1017,15 +1017,16 @@ document.body.insertAdjacentHTML("beforeend", `<a class="discord-btn float-disco
 let liveBanner = null;
 function liveAgo() {
   const chip = $("#liveChipTxt");
-  if (chip && META.updated) chip.textContent = T[lang].ago(now() - META.updated);
+  if (chip) chip.textContent = T[lang].ago(now() - (META.checked || META.updated));
   $$("[data-ago]").forEach(el => el.textContent = T[lang].ago(now() - +el.dataset.ago));
   const el = $("#liveLabel");
-  if (el && META.updated) el.textContent = T[lang].hero_live(T[lang].ago(now() - META.updated), META.posts.toLocaleString(lang));
+  if (el && META.updated) el.textContent = T[lang].hero_live(T[lang].ago(now() - Math.max(...MAIN.map(p => p.c), META.updated)), META.posts.toLocaleString(lang));
 }
 async function checkLive() {
   try {
     const m = await fetch(`/data/meta.json?t=${Date.now()}`, { cache: "no-store" }).then(r => r.json());
-    if (!m.updated || m.updated <= META.updated) return liveAgo();
+    if (!m.updated || (m.updated <= META.updated && (m.checked || 0) <= (META.checked || 0))) return liveAgo();
+    if (m.updated <= META.updated) { META.checked = m.checked; return liveAgo(); }
     const before = new Set(POSTS.map(p => p.id));
     await load(true);
     const added = MAIN.filter(p => !before.has(p.id));
