@@ -1,7 +1,7 @@
-/* Jev Radar : site statique, données régénérées toutes les heures par le pipeline. */
+/* AGK Radar : site statique, données régénérées toutes les heures par le pipeline. */
 (() => {
 "use strict";
-const CFG = window.JEV_CONFIG || {};
+const CFG = window.AGK_CONFIG || {};
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const view = $("#view");
@@ -12,39 +12,39 @@ const T = {
     nav_home: "Live", nav_builds: "Builds", nav_opps: "Opportunities", nav_top: "Top 100", nav_people: "People", nav_all: "Everything", nav_map: "Map",
     search_short: "Search", join: "Join Discord", support: "Support", support_long: "Support the project", follow: "Follow",
     hero_live: (m, n) => `LIVE · last post ${m} · ${n} posts tracked`,
-    hero_h: "Everything happening with <em>Jev</em>, live.",
-    hero_p: "Every post, demo, integration and debate about TypeSafe's System One model on X. Classified by Jev itself and updated live, every few minutes, with a leaderboard of the businesses worth building.",
+    hero_h: "Everything happening with <em>System One</em>, live.",
+    hero_p: "Every post, demo, integration and debate about the System One model on X. Classified by AGK Intelligence and updated live, every few minutes, with a leaderboard of the businesses worth building.",
     hero_search: "Search posts, people, demos, transcripts, ideas…",
     k_posts: "posts", k_people: "people", k_views: "views", k_builds: "builds & demos", k_videos: "videos", k_code: "open source / free tools",
-    latest: "Latest posts, <em>live</em>", latest_p: "Every new post about Jev as it lands on X, refreshed every few minutes.",
+    latest: "Latest posts, <em>live</em>", latest_p: "Every new post about System One as it lands on X, refreshed every few minutes.",
     trending: "Trending <em>now</em>", trending_p: "The most engaging posts of the last 24 hours.",
-    builds_h: "What people <em>built</em>", builds_p: "Real systems running on Jev, with how they work.",
+    builds_h: "What people <em>built</em>", builds_p: "Real systems running on System One, with how they work.",
     opps_h: "Where the <em>money</em> is", opps_p: "Niches ranked by passive-income potential, recomputed every hour from every post.",
     pulse_h: "The <em>pulse</em>", pulse_p: "How the conversation is moving.",
     debate_h: "The <em>debate</em>", debate_p: "Not everyone is convinced. The strongest voices on both sides.",
-    people_h: "People to <em>follow</em>", people_p: "Who is building and talking about Jev, ranked by reach.",
-    runs_h: "Where Jev <em>runs</em>", runs_p: "Platforms, SDKs and integrations announced so far.",
-    see_all: "See all →", per_day: "Posts per day", by_domain: "Application domain", by_pattern: "How Jev is used in systems", tone: "Tone toward Jev", format: "Format",
+    people_h: "People to <em>follow</em>", people_p: "Who is building and talking about System One, ranked by reach.",
+    runs_h: "Where System One <em>runs</em>", runs_p: "Platforms, SDKs and integrations announced so far.",
+    see_all: "See all →", per_day: "Posts per day", by_domain: "Application domain", by_pattern: "How System One is used in systems", tone: "Tone toward System One", format: "Format",
     skeptics: "Skeptics", believers: "Believers",
-    cta_h: "Build with Jev <em>alongside us</em>.", cta_p: "Join the Agentik OS Discord: builders shipping Jev products, sharing code, niches and revenue. Follow on X for the hourly best-of.",
-    builds_title: "Everything people <em>built</em> with Jev", builds_lead: "Demos, tools and experiments, with a short explanation of the system behind each one.",
-    opps_title: "Passive-income <em>opportunities</em>", opps_lead: "An analysis of the analysis: every post is classified by Jev into a product niche, then niches are scored on the signals that matter for a product that earns while you sleep.",
+    cta_h: "Build with System One <em>alongside us</em>.", cta_p: "Join the Agentik OS Discord: builders shipping System One products, sharing code, niches and revenue. Follow on X for the hourly best-of.",
+    builds_title: "Everything people <em>built</em> with System One", builds_lead: "Demos, tools and experiments, with a short explanation of the system behind each one.",
+    opps_title: "Passive-income <em>opportunities</em>", opps_lead: "An analysis of the analysis: every post is classified by AGK Intelligence into a product niche, then niches are scored on the signals that matter for a product that earns while you sleep.",
     seg_niches: "Niche leaderboard", seg_ideas: "Idea library", seg_check: "Test your idea",
     col_rank: "Rank", col_niche: "Niche", col_score: "Score", col_signals: "Signals", col_activity: "Activity",
     s_passive: "passive", s_traction: "traction", s_demand: "demand", s_momentum: "momentum", s_space: "space",
-    s_pain: "pain", s_recurring: "recurring", s_automation: "hands-off", s_jev_fit: "Jev fit", s_open_market: "open", s_build_ease: "easy", s_x_signal: "X buzz",
-    w_passive: "Passive potential (Jev's judgment)", w_traction: "Traction (engagement)", w_demand: "Demand (people asking)", w_momentum: "Momentum (last 48 h)", w_space: "Open space (few products yet)",
+    s_pain: "pain", s_recurring: "recurring", s_automation: "hands-off", s_jev_fit: "System One fit", s_open_market: "open", s_build_ease: "easy", s_x_signal: "X buzz",
+    w_passive: "Passive potential (AGK Intelligence's judgment)", w_traction: "Traction (engagement)", w_demand: "Demand (people asking)", w_momentum: "Momentum (last 48 h)", w_space: "Open space (few products yet)",
     idea_label: "Product idea", evidence: "Evidence from X", untapped: "UNTAPPED",
-    ideas_lead: "Product ideas scored by Jev on six criteria, plus the buzz of their niche on X. Ideas marked untapped have no builder on X yet.",
+    ideas_lead: "Product ideas scored by AGK Intelligence on six criteria, plus the buzz of their niche on X. Ideas marked untapped have no builder on X yet.",
     buyer: "Buyer", price: "Pricing", niche_rank: "niche rank",
-    not_advice: "Signals, not financial advice. Scores reflect public posts on X and Jev's judgments; validate demand before building.",
-    check_h: "Test your own idea with Jev", check_p: "Describe a product. Jev scores it on the same six criteria in about a second.",
+    not_advice: "Signals, not financial advice. Scores reflect public posts on X and AGK Intelligence's judgments; validate demand before building.",
+    check_h: "Test your own idea with AGK Intelligence", check_p: "Describe a product. AGK Intelligence scores it on the same six criteria in about a second.",
     check_ph: "e.g. A Shopify app that flags fraudulent orders before shipping, $29/month…", check_btn: "Score my idea",
-    check_empty: "Your scores will appear here.", check_err: "Could not reach Jev. Try again in a minute.",
+    check_empty: "Your scores will appear here.", check_err: "Could not reach AGK Intelligence. Try again in a minute.",
     top_title: "Top <em>100</em>", top_lead: "The Radar Score blends engagement with how concrete a post is: working demos, technical depth and shared code rank higher.",
-    people_title: "The <em>people</em> of Jev", people_lead: "Everyone who posted about Jev, ranked by the total reach of their Jev posts.",
+    people_title: "The <em>people</em> of System One", people_lead: "Everyone who posted about System One, ranked by the total reach of their System One posts.",
     all_title: "<em>Everything</em>", all_lead: "Every post, filterable and sortable.",
-    map_title: "The Jev <em>map</em>", map_lead: "Everything known about Jev in one interactive map, rebuilt every hour from the data. Click a branch to open it.",
+    map_title: "The System One <em>map</em>", map_lead: "Everything known about System One in one interactive map, rebuilt every hour from the data. Click a branch to open it.",
     f_all_types: "All types", f_all_domains: "All domains", f_all_niches: "All niches", f_all_formats: "All formats",
     f_video: "Video", f_photo: "Image", f_article: "Article", f_text: "Text only",
     sort_rs: "Sort: Radar score", sort_views: "Sort: views", sort_likes: "Sort: likes", sort_date: "Sort: newest", sort_depth: "Sort: technical depth",
@@ -52,63 +52,63 @@ const T = {
     view_on_x: "View on X ↗", copy_link: "Copy link", copied: "Copied", transcript: "Video transcript", links: "Links", article: "Article", system: "The system",
     sr_people: "People", sr_posts: "Posts", sr_ideas: "Ideas & niches", sr_none: "Nothing found. Try another word.",
     sr_tips: "Try:", ago: s => s < 60 ? "just now" : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} d ago`,
-    followers: "followers", jposts: n => `${n} post${n > 1 ? "s" : ""} about Jev`, reach: "reach",
-    foot_about: "An unofficial, independent tracker of everything said about Jev on X. Not affiliated with TypeSafe AI. Posts belong to their authors and link back to X.",
+    followers: "followers", jposts: n => `${n} post${n > 1 ? "s" : ""} about System One`, reach: "reach",
+    foot_about: "An unofficial, independent tracker of everything said about System One on X. Not affiliated with TypeSafe AI. Posts belong to their authors and link back to X.",
     foot_method: "Method", foot_community: "Community",
-    foot_method_txt: "Public posts are collected live (every 3 minutes for active accounts, hourly for the whole network), videos are transcribed, and each post is classified by Jev itself: type, domain, system pattern, niche and business signals.",
+    foot_method_txt: "Public posts are collected live (every 3 minutes for active accounts, hourly for the whole network), videos are transcribed, and each post is classified by AGK Intelligence: type, domain, system pattern, niche and business signals.",
     builders: "builders", in48: "in 48 h",
     nav_money: "Money now",
-    money_eyebrow: "Money now", money_title: "Make money with Jev <em>this week</em>",
-    money_lead: "Tell Jev who you are. It ranks the fastest ways to get paid with Jev plus Claude or Astra: what to sell, the price, the 48-hour plan, the payment setup and the launch post.",
+    money_eyebrow: "Money now", money_title: "Make money with System One <em>this week</em>",
+    money_lead: "Tell AGK Intelligence who you are. It ranks the fastest ways to get paid with System One plus Claude or Astra: what to sell, the price, the 48-hour plan, the payment setup and the launch post.",
     q_code: "Can you code?", q_audience: "Your audience", q_hours: "Hours this week", q_goal: "You want",
     o_code: ["No", "A little", "Yes"], o_audience: ["None", "< 1k", "1k–10k", "10k+"], o_hours: ["< 5 h", "5–15 h", "15–40 h", "40 h+"], o_goal: ["Cash this week", "Monthly recurring", "Either"],
     notes_ph: "Anything else? Your niche, skills, what you already have… (optional)",
-    money_btn: "Show me the money 💸", money_wait: "Jev is ranking the plays…",
+    money_btn: "Show me the money 💸", money_wait: "AGK Intelligence is ranking the plays…",
     do_today: "Do this <em>today</em>", more_plays: "More plays", fit: "fit", launch_in: h => `launch in ~${h} h`,
     plan48: "48-hour plan", get_paid: "Get paid with", launch_post: "Launch post (copy & post)", copy: "Copy", copied2: "Copied ✓",
     evidence_line: (r, n) => `Niche #${r} on the radar · ${n} posts`, recurring: "recurring", one_off: "one-off",
     pay_box_h: "Take payments in 10 minutes", pay_box: ["Create a product in Stripe, Lemon Squeezy or Gumroad", "Copy its Payment Link (no code, no website needed)", "Put the link in your launch post and your X bio", "Deliver automatically: file download, license key or Discord role"],
     money_disclaimer: "No guaranteed income. These are plays ranked on public signals; results depend on execution.",
-    money_personal: "Ranked for you by Jev", money_default: "Ranked by speed and demand. Answer the 4 questions to personalize with Jev.",
+    money_personal: "Ranked for you by AGK Intelligence", money_default: "Ranked by speed and demand. Answer the 4 questions to personalize with AGK Intelligence.",
     type_names: { pack: "Pack", code: "Code", service: "Service", subscription: "Subscription", course: "Workshop", api: "API" },
   },
   fr: {
     nav_home: "En direct", nav_builds: "Démos", nav_opps: "Opportunités", nav_top: "Top 100", nav_people: "Personnes", nav_all: "Tout", nav_map: "Carte",
     search_short: "Rechercher", join: "Rejoindre le Discord", support: "Soutenir", support_long: "Soutenir le projet", follow: "Suivre",
     hero_live: (m, n) => `EN DIRECT · dernier post ${m} · ${n} posts suivis`,
-    hero_h: "Tout ce qui se passe autour de <em>Jev</em>, en direct.",
-    hero_p: "Chaque post, démo, intégration et débat sur le modèle System One de TypeSafe sur X. Classé par Jev lui-même et mis à jour en direct, toutes les quelques minutes, avec un classement des business à construire.",
+    hero_h: "Tout ce qui se passe autour de <em>System One</em>, en direct.",
+    hero_p: "Chaque post, démo, intégration et débat sur le modèle System One sur X. Classé par AGK Intelligence et mis à jour en direct, toutes les quelques minutes, avec un classement des business à construire.",
     hero_search: "Chercher des posts, personnes, démos, transcriptions, idées…",
     k_posts: "posts", k_people: "personnes", k_views: "vues", k_builds: "démos & systèmes", k_videos: "vidéos", k_code: "open source / outils gratuits",
-    latest: "Derniers posts, <em>en direct</em>", latest_p: "Chaque nouveau post sur Jev dès qu'il arrive sur X, rafraîchi toutes les quelques minutes.",
+    latest: "Derniers posts, <em>en direct</em>", latest_p: "Chaque nouveau post sur System One dès qu'il arrive sur X, rafraîchi toutes les quelques minutes.",
     trending: "En ce <em>moment</em>", trending_p: "Les posts les plus engageants des dernières 24 heures.",
-    builds_h: "Ce que les gens ont <em>construit</em>", builds_p: "De vrais systèmes qui tournent sur Jev, avec leur fonctionnement.",
+    builds_h: "Ce que les gens ont <em>construit</em>", builds_p: "De vrais systèmes qui tournent sur System One, avec leur fonctionnement.",
     opps_h: "Où est l'<em>argent</em>", opps_p: "Les niches classées selon leur potentiel de revenu passif, recalculées chaque heure à partir de tous les posts.",
     pulse_h: "Le <em>pouls</em>", pulse_p: "Comment évolue la conversation.",
     debate_h: "Le <em>débat</em>", debate_p: "Tout le monde n'est pas convaincu. Les voix les plus fortes des deux camps.",
-    people_h: "Qui <em>suivre</em>", people_p: "Ceux qui construisent et parlent de Jev, classés par audience.",
-    runs_h: "Où tourne <em>Jev</em>", runs_p: "Plateformes, SDK et intégrations annoncés jusqu'ici.",
-    see_all: "Tout voir →", per_day: "Posts par jour", by_domain: "Domaine d'application", by_pattern: "Comment Jev est utilisé", tone: "Ton envers Jev", format: "Format",
+    people_h: "Qui <em>suivre</em>", people_p: "Ceux qui construisent et parlent de System One, classés par audience.",
+    runs_h: "Où tourne <em>System One</em>", runs_p: "Plateformes, SDK et intégrations annoncés jusqu'ici.",
+    see_all: "Tout voir →", per_day: "Posts par jour", by_domain: "Domaine d'application", by_pattern: "Comment System One est utilisé", tone: "Ton envers System One", format: "Format",
     skeptics: "Sceptiques", believers: "Convaincus",
-    cta_h: "Construis avec Jev <em>avec nous</em>.", cta_p: "Rejoins le Discord Agentik OS : des builders qui lancent des produits Jev et partagent code, niches et revenus. Suis-nous sur X pour le best-of horaire.",
-    builds_title: "Tout ce qui a été <em>construit</em> avec Jev", builds_lead: "Démos, outils et expériences, avec une courte explication du système derrière chacun.",
-    opps_title: "Opportunités de <em>revenu passif</em>", opps_lead: "L'analyse de l'analyse : Jev classe chaque post dans une niche de produit, puis chaque niche est notée sur les signaux qui comptent pour un produit qui rapporte pendant que tu dors.",
+    cta_h: "Construis avec System One <em>avec nous</em>.", cta_p: "Rejoins le Discord Agentik OS : des builders qui lancent des produits System One et partagent code, niches et revenus. Suis-nous sur X pour le best-of horaire.",
+    builds_title: "Tout ce qui a été <em>construit</em> avec System One", builds_lead: "Démos, outils et expériences, avec une courte explication du système derrière chacun.",
+    opps_title: "Opportunités de <em>revenu passif</em>", opps_lead: "L'analyse de l'analyse : AGK Intelligence classe chaque post dans une niche de produit, puis chaque niche est notée sur les signaux qui comptent pour un produit qui rapporte pendant que tu dors.",
     seg_niches: "Classement des niches", seg_ideas: "Bibliothèque d'idées", seg_check: "Teste ton idée",
     col_rank: "Rang", col_niche: "Niche", col_score: "Score", col_signals: "Signaux", col_activity: "Activité",
     s_passive: "passif", s_traction: "traction", s_demand: "demande", s_momentum: "dynamique", s_space: "espace",
-    s_pain: "douleur", s_recurring: "récurrent", s_automation: "autonome", s_jev_fit: "fit Jev", s_open_market: "ouvert", s_build_ease: "facile", s_x_signal: "buzz X",
-    w_passive: "Potentiel passif (jugement de Jev)", w_traction: "Traction (engagement)", w_demand: "Demande (gens qui réclament)", w_momentum: "Dynamique (48 dernières h)", w_space: "Espace libre (peu de produits)",
+    s_pain: "douleur", s_recurring: "récurrent", s_automation: "autonome", s_jev_fit: "fit System One", s_open_market: "ouvert", s_build_ease: "facile", s_x_signal: "buzz X",
+    w_passive: "Potentiel passif (jugement d'AGK Intelligence)", w_traction: "Traction (engagement)", w_demand: "Demande (gens qui réclament)", w_momentum: "Dynamique (48 dernières h)", w_space: "Espace libre (peu de produits)",
     idea_label: "Idée de produit", evidence: "Preuves sur X", untapped: "VIERGE",
-    ideas_lead: "Des idées de produits notées par Jev sur six critères, plus le buzz de leur niche sur X. Les idées « vierges » n'ont encore aucun builder sur X.",
+    ideas_lead: "Des idées de produits notées par AGK Intelligence sur six critères, plus le buzz de leur niche sur X. Les idées « vierges » n'ont encore aucun builder sur X.",
     buyer: "Client", price: "Prix", niche_rank: "rang de la niche",
-    not_advice: "Des signaux, pas un conseil financier. Les scores reflètent les posts publics sur X et les jugements de Jev ; valide la demande avant de construire.",
-    check_h: "Teste ta propre idée avec Jev", check_p: "Décris un produit. Jev le note sur les six mêmes critères en une seconde environ.",
+    not_advice: "Des signaux, pas un conseil financier. Les scores reflètent les posts publics sur X et les jugements d'AGK Intelligence ; valide la demande avant de construire.",
+    check_h: "Teste ta propre idée avec AGK Intelligence", check_p: "Décris un produit. AGK Intelligence le note sur les six mêmes critères en une seconde environ.",
     check_ph: "ex. Une app Shopify qui repère les commandes frauduleuses avant expédition, 29 $/mois…", check_btn: "Noter mon idée",
-    check_empty: "Tes scores apparaîtront ici.", check_err: "Impossible de joindre Jev. Réessaie dans une minute.",
+    check_empty: "Tes scores apparaîtront ici.", check_err: "Impossible de joindre AGK Intelligence. Réessaie dans une minute.",
     top_title: "Top <em>100</em>", top_lead: "Le Radar Score mélange l'engagement et le côté concret d'un post : démos qui marchent, détail technique et code partagé passent devant.",
-    people_title: "Les <em>gens</em> de Jev", people_lead: "Tous ceux qui ont posté sur Jev, classés par audience totale de leurs posts sur Jev.",
+    people_title: "Les <em>gens</em> de System One", people_lead: "Tous ceux qui ont posté sur System One, classés par audience totale de leurs posts sur System One.",
     all_title: "<em>Tout</em>", all_lead: "Chaque post, filtrable et triable.",
-    map_title: "La <em>carte</em> de Jev", map_lead: "Tout ce qu'on sait sur Jev dans une carte interactive, reconstruite chaque heure à partir des données. Clique sur une branche pour l'ouvrir.",
+    map_title: "La <em>carte</em> de System One", map_lead: "Tout ce qu'on sait sur System One dans une carte interactive, reconstruite chaque heure à partir des données. Clique sur une branche pour l'ouvrir.",
     f_all_types: "Tous types", f_all_domains: "Tous domaines", f_all_niches: "Toutes niches", f_all_formats: "Tous formats",
     f_video: "Vidéo", f_photo: "Image", f_article: "Article", f_text: "Texte seul",
     sort_rs: "Tri : Radar score", sort_views: "Tri : vues", sort_likes: "Tri : likes", sort_date: "Tri : plus récent", sort_depth: "Tri : profondeur technique",
@@ -116,31 +116,31 @@ const T = {
     view_on_x: "Voir sur X ↗", copy_link: "Copier le lien", copied: "Copié", transcript: "Transcription vidéo", links: "Liens", article: "Article", system: "Le système",
     sr_people: "Personnes", sr_posts: "Posts", sr_ideas: "Idées & niches", sr_none: "Rien trouvé. Essaie un autre mot.",
     sr_tips: "Essaie :", ago: s => s < 60 ? "à l'instant" : s < 3600 ? `il y a ${Math.round(s / 60)} min` : s < 86400 ? `il y a ${Math.round(s / 3600)} h` : `il y a ${Math.round(s / 86400)} j`,
-    followers: "abonnés", jposts: n => `${n} post${n > 1 ? "s" : ""} sur Jev`, reach: "audience",
-    foot_about: "Un suivi indépendant et non officiel de tout ce qui se dit sur Jev sur X. Aucun lien avec TypeSafe AI. Les posts appartiennent à leurs auteurs et renvoient vers X.",
+    followers: "abonnés", jposts: n => `${n} post${n > 1 ? "s" : ""} sur System One`, reach: "audience",
+    foot_about: "Un suivi indépendant et non officiel de tout ce qui se dit sur System One sur X. Aucun lien avec TypeSafe AI. Les posts appartiennent à leurs auteurs et renvoient vers X.",
     foot_method: "Méthode", foot_community: "Communauté",
-    foot_method_txt: "Les posts publics sont collectés en direct (toutes les 3 minutes pour les comptes actifs, chaque heure pour tout le réseau), les vidéos sont transcrites, et chaque post est classé par Jev lui-même : type, domaine, système, niche et signaux business.",
+    foot_method_txt: "Les posts publics sont collectés en direct (toutes les 3 minutes pour les comptes actifs, chaque heure pour tout le réseau), les vidéos sont transcrites, et chaque post est classé par AGK Intelligence : type, domaine, système, niche et signaux business.",
     builders: "builders", in48: "en 48 h",
     nav_money: "Money now",
-    money_eyebrow: "Money now", money_title: "Gagne de l'argent avec Jev <em>cette semaine</em>",
-    money_lead: "Dis à Jev qui tu es. Il classe les façons les plus rapides d'être payé avec Jev + Claude ou Astra : quoi vendre, le prix, le plan sur 48 h, le système de paiement et le post de lancement.",
+    money_eyebrow: "Money now", money_title: "Gagne de l'argent avec System One <em>cette semaine</em>",
+    money_lead: "Dis à AGK Intelligence qui tu es. Elle classe les façons les plus rapides d'être payé avec System One + Claude ou Astra : quoi vendre, le prix, le plan sur 48 h, le système de paiement et le post de lancement.",
     q_code: "Tu sais coder ?", q_audience: "Ton audience", q_hours: "Heures dispo cette semaine", q_goal: "Tu veux",
     o_code: ["Non", "Un peu", "Oui"], o_audience: ["Aucune", "< 1k", "1k–10k", "10k+"], o_hours: ["< 5 h", "5–15 h", "15–40 h", "40 h+"], o_goal: ["Du cash cette semaine", "Du récurrent", "Peu importe"],
     notes_ph: "Autre chose ? Ta niche, tes compétences, ce que tu as déjà… (optionnel)",
-    money_btn: "Montre-moi l'argent 💸", money_wait: "Jev classe les pistes…",
+    money_btn: "Montre-moi l'argent 💸", money_wait: "AGK Intelligence classe les pistes…",
     do_today: "À faire <em>aujourd'hui</em>", more_plays: "Autres pistes", fit: "fit", launch_in: h => `lancement en ~${h} h`,
     plan48: "Plan sur 48 h", get_paid: "Encaisser avec", launch_post: "Post de lancement (copie et poste)", copy: "Copier", copied2: "Copié ✓",
     evidence_line: (r, n) => `Niche n°${r} sur le radar · ${n} posts`, recurring: "récurrent", one_off: "vente unique",
     pay_box_h: "Encaisser en 10 minutes", pay_box: ["Crée un produit sur Stripe, Lemon Squeezy ou Gumroad", "Copie son lien de paiement (ni code ni site nécessaires)", "Mets le lien dans ton post de lancement et ta bio X", "Livre automatiquement : fichier, clé de licence ou rôle Discord"],
     money_disclaimer: "Aucun revenu garanti. Ce sont des pistes classées sur des signaux publics ; le résultat dépend de l'exécution.",
-    money_personal: "Classé pour toi par Jev", money_default: "Classé par rapidité et demande. Réponds aux 4 questions pour que Jev personnalise.",
+    money_personal: "Classé pour toi par AGK Intelligence", money_default: "Classé par rapidité et demande. Réponds aux 4 questions pour qu'AGK Intelligence personnalise.",
     type_names: { pack: "Pack", code: "Code", service: "Service", subscription: "Abonnement", course: "Atelier", api: "API" },
   },
 };
 const L = {
   category: {
-    en: { pending: "New · classifying…", build_demo: "Build / demo", integration: "Integration", explainer: "Explainer", news: "News", opinion: "Opinion", critique: "Critique", official: "Official TypeSafe", meme: "Meme", question: "Question" },
-    fr: { pending: "Nouveau · en cours de classement", build_demo: "Démo / construit", integration: "Intégration", explainer: "Explication", news: "Actu", opinion: "Avis", critique: "Critique", official: "Officiel TypeSafe", meme: "Mème", question: "Question" },
+    en: { pending: "New · classifying…", build_demo: "Build / demo", integration: "Integration", explainer: "Explainer", news: "News", opinion: "Opinion", critique: "Critique", official: "Official", meme: "Meme", question: "Question" },
+    fr: { pending: "Nouveau · en cours de classement", build_demo: "Démo / construit", integration: "Intégration", explainer: "Explication", news: "Actu", opinion: "Avis", critique: "Critique", official: "Officiel", meme: "Mème", question: "Question" },
   },
   domain: {
     en: { marketing_ads: "Marketing & ads", social_content: "Social & content", sales_leads: "Sales & leads", coding_devtools: "Code & dev tools", agents_browser: "Agents & browser", games: "Games", trading_finance: "Trading & finance", support_email: "Support & email", search_rag: "Search & RAG", safety_moderation: "Safety & moderation", data_classification: "Data classification", ux_personalization: "UX & personalization", research_science: "Research & benchmarks", general: "General" },
@@ -471,7 +471,7 @@ function pageHome() {
       <svg viewBox="0 0 24 24" width="20" height="20"><path fill="none" stroke="currentColor" stroke-width="2" d="m21 21-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>
       <span>${t("hero_search")}</span><kbd>⌘K</kbd>
     </div>
-    <div class="hero-cta"><a class="btn money-hero" href="/money">💸 ${lang === "fr" ? "Comment gagner de l'argent avec Jev, maintenant" : "How to make money with Jev, right now"}</a></div>
+    <div class="hero-cta"><a class="btn money-hero" href="/money">💸 ${lang === "fr" ? "Comment gagner de l'argent avec System One, maintenant" : "How to make money with System One, right now"}</a></div>
     <div class="chips" style="margin-top:18px">${chipDefs.map(([h, l, n]) => `<a class="chip" href="${h}">${l}${n != null ? `<span class="n">${n}</span>` : ""}</a>`).join("")}</div>
   </section>
   <div class="kpis">
@@ -593,7 +593,7 @@ async function checkIdea() {
     const r = await fetch("/api/check-idea", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idea: txt }) });
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || "error");
-    // même formule que la bibliothèque : critères Jev + buzz X de la niche la plus proche
+    // même formule que la bibliothèque : critères System One + buzz X de la niche la plus proche
     const nb = NICHES.find(n => n.id === d.niche);
     d.sub.x_signal = nb ? nb.score / 100 : 0;
     const W = META.idea_weights || {};
@@ -666,7 +666,7 @@ const MONEY_KEYS = { code: ["no", "a little", "yes, comfortably"], audience: ["n
 let moneyProfile = { code: 1, audience: 1, hours: 1, goal: 2, notes: "" }, moneyFit = null;
 try { Object.assign(moneyProfile, JSON.parse(localStorage.getItem("jr_money") || "{}")); } catch {}
 function heuristicFit(p) {
-  // sans Jev : rapidité, demande sur le radar, et compatibilité grossière avec le profil
+  // sans System One : rapidité, demande sur le radar, et compatibilité grossière avec le profil
   const pr = moneyProfile;
   let s = 0.55 - p.hours / 150 + (p.niche_score || 0) / 250;
   if (p.code > pr.code) s -= 0.25 * (p.code - pr.code);
@@ -761,32 +761,32 @@ view.addEventListener("change", e => {
 });
 
 // ---------------------------------------------------------------- /post (page cachée : réponses manuelles)
-const SITE_URL = "https://jev.agentik-os.com";
+const SITE_URL = location.origin; // the canonical host follows the deployment (workers.dev, then radar.agentik-os.com)
 let REPLIED = {};
 const REPLY_TPL = {
   build_demo: [
-    "This is one of the best Jev builds so far 🔥\n\nI added it to Jev Radar: a free page that tracks everything built with Jev, in one place.\n\n{url}",
-    "Great build. It's now on Jev Radar with a plain-English breakdown of how it works.\n\nEvery Jev project, demo and idea, free and updated hourly:\n{url}",
-    "Love this one. Added to Jev Radar, where I centralize every Jev build, integration and business idea. Free:\n{url}",
+    "This is one of the best System One builds so far 🔥\n\nI added it to AGK Radar: a free page that tracks everything built with System One, in one place.\n\n{url}",
+    "Great build. It's now on AGK Radar with a plain-English breakdown of how it works.\n\nEvery System One project, demo and idea, free and updated hourly:\n{url}",
+    "Love this one. Added to AGK Radar, where I centralize every System One build, integration and business idea. Free:\n{url}",
   ],
   integration: [
-    "Big one for the Jev ecosystem. I'm tracking every Jev integration on Jev Radar, free and updated every hour:\n{url}",
-    "Added to the \"where Jev runs\" list on Jev Radar. Everything about Jev in one place, free:\n{url}",
+    "Big one for the System One ecosystem. I'm tracking every System One integration on AGK Radar, free and updated every hour:\n{url}",
+    "Added to the \"where System One runs\" list on AGK Radar. Everything about System One in one place, free:\n{url}",
   ],
   explainer: [
-    "Great explainer. For anyone who wants the full picture: Jev Radar centralizes every Jev post, demo and idea. Free:\n{url}",
-    "Saved this in Jev Radar's Learn section. Everything about Jev, one free page, updated hourly:\n{url}",
+    "Great explainer. For anyone who wants the full picture: AGK Radar centralizes every System One post, demo and idea. Free:\n{url}",
+    "Saved this in AGK Radar's Learn section. Everything about System One, one free page, updated hourly:\n{url}",
   ],
   critique: [
-    "Fair point, and worth hearing. Jev Radar tracks both sides of the Jev debate, skeptics included. Free:\n{url}",
+    "Fair point, and worth hearing. AGK Radar tracks both sides of the System One debate, skeptics included. Free:\n{url}",
   ],
   question: [
-    "This might help: Jev Radar puts every Jev demo, explainer and integration in one free page:\n{url}",
+    "This might help: AGK Radar puts every System One demo, explainer and integration in one free page:\n{url}",
   ],
   default: [
-    "Hey, I put everything about Jev in one place: every post, demo and business idea. Free, updated hourly.\n\nYours is on it:\n{url}",
-    "If you're following Jev: I centralize every post, build and money idea on one free page, updated every hour.\n\n{url}",
-    "Jev moves fast, so I built one free page that tracks all of it: posts, builds, integrations, niches.\n\n{url}",
+    "Hey, I put everything about System One in one place: every post, demo and business idea. Free, updated hourly.\n\nYours is on it:\n{url}",
+    "If you're following System One: I centralize every post, build and money idea on one free page, updated every hour.\n\n{url}",
+    "System One moves fast, so I built one free page that tracks all of it: posts, builds, integrations, niches.\n\n{url}",
   ],
 };
 function replyFor(p) {
@@ -815,7 +815,7 @@ function renderPostPage() {
   view.innerHTML = `
   <div class="page-head"><div class="eyebrow">/post · ${lang === "fr" ? "page privée" : "private page"}</div>
     <h1>${lang === "fr" ? "Réponses à <em>poster</em>" : "Replies to <em>post</em>"}</h1>
-    <p>${lang === "fr" ? "Un commentaire prêt pour chaque post sur Jev. Clique « Répondre sur X », poste, puis marque-le. Tes réponses publiées depuis @Agentik_os sont validées automatiquement." : "A ready reply for every post about Jev. Click Reply on X, post it, then mark it. Replies published from @Agentik_os are verified automatically."}</p></div>
+    <p>${lang === "fr" ? "Un commentaire prêt pour chaque post sur System One. Clique « Répondre sur X », poste, puis marque-le. Tes réponses publiées depuis @Agentik_os sont validées automatiquement." : "A ready reply for every post about System One. Click Reply on X, post it, then mark it. Replies published from @Agentik_os are verified automatically."}</p></div>
   <div class="method">
     <div><b>${counts.todo + counts.opened}</b><span>${lang === "fr" ? "à faire" : "to do"}</span></div>
     <div><b style="color:var(--acc)">${counts.verified}</b><span>${lang === "fr" ? "vérifiés sur X ✓" : "verified on X ✓"}</span></div>
@@ -870,8 +870,8 @@ function mapTree() {
   const byPat = k => pick(MAIN.filter(p => p.j.pattern === k && ["build_demo", "official"].includes(p.j.category)).sort((a, b) => b.m[4] - a.m[4]), 4);
   const integ = MAIN.filter(p => p.j.category === "integration").sort((a, b) => b.m[4] - a.m[4]);
   return {
-    label: "Jev", children: [
-      { label: fr ? "Ce qu'est Jev" : "What Jev is", children: [
+    label: "System One", children: [
+      { label: fr ? "Ce qu'est System One" : "What System One is", children: [
         { label: fr ? "Un modèle « System One », pas un LLM" : "A System One model, not an LLM" },
         { label: fr ? "Entrée : state + questions typées" : "Input: state + typed questions" },
         { label: fr ? "3 types de questions" : "Three question types", children: [{ label: "Choice" }, { label: "Score" }, { label: "Noul (oui/non)" }] },
@@ -880,7 +880,7 @@ function mapTree() {
         { label: fr ? "~70 à 500 ms par décision" : "~70-500 ms per decision" },
       ] },
       { label: fr ? "Où il tourne" : "Where it runs", children: [
-        { label: "API TypeSafe · SDK Python / JS", href: "https://docs.typesafe.ai" },
+        { label: "Provider API · Python / JS SDK", href: "https://docs.typesafe.ai" },
         ...pick(integ, 6),
       ] },
       { label: fr ? "Schémas de systèmes" : "System patterns", children: ["realtime_loop", "batch_classifier", "router", "reviewer_guardrail", "ranking", "features_for_ml"].map(k => ({
@@ -891,7 +891,7 @@ function mapTree() {
       { label: fr ? "Le débat" : "The debate", children: pick(MAIN.filter(p => p.j.category === "critique").sort((a, b) => b.m[4] - a.m[4]), 5) },
       { label: fr ? "Apprendre" : "Learn", children: [
         { label: fr ? "Blog de lancement" : "Launch blog", href: "https://typesafe.ai/blog/introducing-system-one-models-and-jev" },
-        { label: "Docs TypeSafe", href: "https://docs.typesafe.ai" },
+        { label: "Provider docs", href: "https://docs.typesafe.ai" },
         ...pick(MAIN.filter(p => p.j.category === "explainer").sort((a, b) => b.m[4] - a.m[4]), 5),
       ] },
     ],
@@ -905,7 +905,7 @@ function pageMap() {
 }
 function drawMap() {
   const root = mapTree();
-  const ROW = 34, COLW = [120, 250, 330, 360];
+  const ROW = 34, COLW = [160, 250, 330, 360];
   let y = 0;
   const nodes = [], links = [];
   (function lay(n, depth, path, color) {
@@ -924,12 +924,12 @@ function drawMap() {
   const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
     <g transform="translate(0,20)">
     ${links.map(([a, b]) => {
-      const x1 = a.x + (a.depth === 0 ? 70 : tw(a)), y1 = a.y, x2 = b.x, y2 = b.y, mx = (x1 + x2) / 2;
+      const x1 = a.x + (a.depth === 0 ? 118 : tw(a)), y1 = a.y, x2 = b.x, y2 = b.y, mx = (x1 + x2) / 2;
       return `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2 - 6},${y2}" fill="none" stroke="${b.color}" stroke-width="1.6" opacity=".75"/><line x1="${x2 - 6}" y1="${y2 + 8}" x2="${x2 + tw(b) - 10}" y2="${y2 + 8}" stroke="${b.color}" stroke-width="1.2" opacity=".5"/>`;
     }).join("")}
     ${nodes.map(n => {
       const has = n.children?.length, open = mmOpen.has(n.path);
-      if (n.depth === 0) return `<g class="mm-node mm-root" data-path="root"><rect x="${n.x - 6}" y="${n.y - 20}" width="80" height="40" rx="10"/><text x="${n.x + 34}" y="${n.y + 6}" text-anchor="middle" style="font:italic 24px 'Instrument Serif';fill:var(--acc)">Jev</text></g>`;
+      if (n.depth === 0) return `<g class="mm-node mm-root" data-path="root"><rect x="${n.x - 6}" y="${n.y - 20}" width="126" height="40" rx="10"/><text x="${n.x + 57}" y="${n.y + 6}" text-anchor="middle" style="font:italic 24px 'Instrument Serif';fill:var(--acc)">System One</text></g>`;
       return `<g class="mm-node" data-path="${n.path}" ${n.post ? `data-mpost="${n.post}"` : ""} ${n.go ? `data-mgo="${n.go}"` : ""} ${n.href ? `data-mhref="${esc(n.href)}"` : ""}>
         <rect x="${n.x - 8}" y="${n.y - 14}" width="${tw(n)}" height="28" fill="transparent"/>
         <text class="lbl" x="${n.x}" y="${n.y + 4}" ${n.depth === 1 ? 'style="font-weight:600"' : ""}>${esc(n.label.length > 48 ? n.label.slice(0, 47) + "…" : n.label)}${n.count != null ? `<tspan class="cnt" dx="8">${n.count}</tspan>` : ""}</text>

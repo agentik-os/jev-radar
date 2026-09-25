@@ -1,0 +1,1016 @@
+{
+ "ideas": [
+  {
+   "k": "pr_guard",
+   "n": "code_review",
+   "en": "PR risk checker",
+   "fr": "Contrôle de risque des PR",
+   "pen": "GitHub App asking 15 typed questions on every diff (secrets, auth, deleted tests, breaking API) and blocking risky merges.",
+   "pfr": "GitHub App qui pose 15 questions typées sur chaque diff (secrets, auth, tests supprimés, API cassée) et bloque les merges risqués.",
+   "ben": "Engineering teams",
+   "bfr": "Équipes tech",
+   "price": "$29/repo/mo",
+   "_state": {
+    "product": "PR risk checker",
+    "pitch": "GitHub App asking 15 typed questions on every diff (secrets, auth, deleted tests, breaking API) and blocking risky merges.",
+    "buyer": "Engineering teams",
+    "pricing": "$29/repo/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92c38ecbe580"
+  },
+  {
+   "k": "agent_permissions",
+   "n": "agent_safety",
+   "en": "Natural-language agent permissions",
+   "fr": "Permissions d'agents en langage naturel",
+   "pen": "Drop-in policy layer for Claude Code, Codex and opencode: write rules in plain words, System One approves or blocks each command in 200 ms.",
+   "pfr": "Couche de règles pour Claude Code, Codex, opencode : règles en langage courant, System One valide ou bloque chaque commande en 200 ms.",
+   "ben": "Teams using coding agents",
+   "bfr": "Équipes qui utilisent des agents de code",
+   "price": "$10/seat/mo",
+   "_state": {
+    "product": "Natural-language agent permissions",
+    "pitch": "Drop-in policy layer for Claude Code, Codex and opencode: write rules in plain words, System One approves or blocks each command in 200 ms.",
+    "buyer": "Teams using coding agents",
+    "pricing": "$10/seat/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9279e7e9ba75"
+  },
+  {
+   "k": "context_pruner",
+   "n": "context_compaction",
+   "en": "Instant context pruner",
+   "fr": "Élagueur de contexte instantané",
+   "pen": "Plugin that drops stale tool calls from agent sessions in one second, cutting token bills and keeping agents sharp.",
+   "pfr": "Plugin qui retire en 1 s les appels d'outils périmés des sessions d'agents : factures de tokens réduites, agents plus précis.",
+   "ben": "Heavy agent users",
+   "bfr": "Gros utilisateurs d'agents",
+   "price": "$9/mo",
+   "_state": {
+    "product": "Instant context pruner",
+    "pitch": "Plugin that drops stale tool calls from agent sessions in one second, cutting token bills and keeping agents sharp.",
+    "buyer": "Heavy agent users",
+    "pricing": "$9/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b920875024914"
+  },
+  {
+   "k": "model_router",
+   "n": "tool_routing",
+   "en": "Cheapest-capable model router",
+   "fr": "Routeur vers le modèle le moins cher",
+   "pen": "Proxy that asks System One how hard each request is and sends it to the cheapest model that can handle it; bills a share of savings.",
+   "pfr": "Proxy qui demande à System One la difficulté de chaque requête et l'envoie au modèle le moins cher capable ; facture une part des économies.",
+   "ben": "AI startups",
+   "bfr": "Startups IA",
+   "price": "20% of savings",
+   "_state": {
+    "product": "Cheapest-capable model router",
+    "pitch": "Proxy that asks System One how hard each request is and sends it to the cheapest model that can handle it; bills a share of savings.",
+    "buyer": "AI startups",
+    "pricing": "20% of savings",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b922c8a917221"
+  },
+  {
+   "k": "skill_picker",
+   "n": "tool_routing",
+   "en": "Agent skill & tool picker",
+   "fr": "Sélecteur de skills et d'outils",
+   "pen": "Ranks hundreds of tools or skills for each agent turn so only the right one enters the prompt.",
+   "pfr": "Classe des centaines d'outils ou de skills à chaque tour d'agent pour n'injecter que le bon dans le prompt.",
+   "ben": "Agent framework builders",
+   "bfr": "Créateurs de frameworks d'agents",
+   "price": "$49/mo",
+   "_state": {
+    "product": "Agent skill & tool picker",
+    "pitch": "Ranks hundreds of tools or skills for each agent turn so only the right one enters the prompt.",
+    "buyer": "Agent framework builders",
+    "pricing": "$49/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92929dd6c013"
+  },
+  {
+   "k": "fast_browser_api",
+   "n": "browser_automation",
+   "en": "Fast browser automation API",
+   "fr": "API d'automatisation web rapide",
+   "pen": "Hosted browser agent where System One picks every click: bookings, forms, scraping at a fraction of LLM-agent cost.",
+   "pfr": "Agent navigateur hébergé où System One choisit chaque clic : réservations, formulaires, scraping pour une fraction du coût d'un agent LLM.",
+   "ben": "Ops & growth teams",
+   "bfr": "Équipes ops et growth",
+   "price": "usage-based",
+   "_state": {
+    "product": "Fast browser automation API",
+    "pitch": "Hosted browser agent where System One picks every click: bookings, forms, scraping at a fraction of LLM-agent cost.",
+    "buyer": "Ops & growth teams",
+    "pricing": "usage-based",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9286b82399a0"
+  },
+  {
+   "k": "voice_browser",
+   "n": "voice_control",
+   "en": "Voice-driven browser",
+   "fr": "Navigateur à la voix",
+   "pen": "Speak and the browser acts in 300 ms: accessibility and hands-free productivity.",
+   "pfr": "Tu parles, le navigateur agit en 300 ms : accessibilité et productivité mains libres.",
+   "ben": "Accessibility users, power users",
+   "bfr": "Accessibilité, utilisateurs avancés",
+   "price": "$8/mo",
+   "_state": {
+    "product": "Voice-driven browser",
+    "pitch": "Speak and the browser acts in 300 ms: accessibility and hands-free productivity.",
+    "buyer": "Accessibility users, power users",
+    "pricing": "$8/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9290a09b4dad"
+  },
+  {
+   "k": "release_breaker",
+   "n": "qa_testing",
+   "en": "Release breaker",
+   "fr": "Casseur de releases",
+   "pen": "Swarm of System One-driven testers that attack every deploy and report regressions before users do.",
+   "pfr": "Essaim de testeurs pilotés par System One qui attaquent chaque déploiement et signalent les régressions avant les utilisateurs.",
+   "ben": "SaaS teams",
+   "bfr": "Équipes SaaS",
+   "price": "$99/mo",
+   "_state": {
+    "product": "Release breaker",
+    "pitch": "Swarm of System One-driven testers that attack every deploy and report regressions before users do.",
+    "buyer": "SaaS teams",
+    "pricing": "$99/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92fe8a74222e"
+  },
+  {
+   "k": "sheet_column",
+   "n": "data_labeling",
+   "en": "AI column for spreadsheets",
+   "fr": "Colonne IA pour tableurs",
+   "pen": "Google Sheets / Excel add-on: type a header like 'Urgency' and every row gets labeled in 100 ms.",
+   "pfr": "Add-on Google Sheets / Excel : tu écris un en-tête comme « Urgence » et chaque ligne est notée en 100 ms.",
+   "ben": "Analysts, ops",
+   "bfr": "Analystes, ops",
+   "price": "$12/mo",
+   "_state": {
+    "product": "AI column for spreadsheets",
+    "pitch": "Google Sheets / Excel add-on: type a header like 'Urgency' and every row gets labeled in 100 ms.",
+    "buyer": "Analysts, ops",
+    "pricing": "$12/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92dfa7c18084"
+  },
+  {
+   "k": "sql_classify",
+   "n": "data_labeling",
+   "en": "SQL classify() for warehouses",
+   "fr": "Fonction SQL classify() pour entrepôts",
+   "pen": "A classify() function for DuckDB, Postgres or BigQuery that labels millions of rows at pennies.",
+   "pfr": "Une fonction classify() pour DuckDB, Postgres ou BigQuery qui étiquette des millions de lignes pour quelques centimes.",
+   "ben": "Data teams",
+   "bfr": "Équipes data",
+   "price": "usage-based",
+   "_state": {
+    "product": "SQL classify() for warehouses",
+    "pitch": "A classify() function for DuckDB, Postgres or BigQuery that labels millions of rows at pennies.",
+    "buyer": "Data teams",
+    "pricing": "usage-based",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b920ba2018a1f"
+  },
+  {
+   "k": "inbox_triage",
+   "n": "email_triage",
+   "en": "Inbox autopilot",
+   "fr": "Pilote automatique de boîte mail",
+   "pen": "Sorts, prioritizes and labels every incoming email in real time; learns your categories.",
+   "pfr": "Trie, priorise et étiquette chaque email entrant en temps réel ; apprend tes catégories.",
+   "ben": "Founders, busy professionals",
+   "bfr": "Fondateurs, pros débordés",
+   "price": "$6/mo",
+   "_state": {
+    "product": "Inbox autopilot",
+    "pitch": "Sorts, prioritizes and labels every incoming email in real time; learns your categories.",
+    "buyer": "Founders, busy professionals",
+    "pricing": "$6/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b929246f7ad95"
+  },
+  {
+   "k": "ticket_router",
+   "n": "support_routing",
+   "en": "Ticket router for help desks",
+   "fr": "Routeur de tickets pour help desk",
+   "pen": "Zendesk / Intercom / Freshdesk app that tags urgency, topic and team for each ticket instantly.",
+   "pfr": "App Zendesk / Intercom / Freshdesk qui attribue urgence, sujet et équipe à chaque ticket instantanément.",
+   "ben": "Support teams",
+   "bfr": "Équipes support",
+   "price": "$49/mo",
+   "_state": {
+    "product": "Ticket router for help desks",
+    "pitch": "Zendesk / Intercom / Freshdesk app that tags urgency, topic and team for each ticket instantly.",
+    "buyer": "Support teams",
+    "pricing": "$49/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92fa82f87cef"
+  },
+  {
+   "k": "churn_signals",
+   "n": "support_routing",
+   "en": "Churn signal detector",
+   "fr": "Détecteur de signaux de churn",
+   "pen": "Reads support messages and product feedback, flags customers about to cancel with a probability.",
+   "pfr": "Lit les messages support et les retours produit, signale les clients sur le point de partir avec une probabilité.",
+   "ben": "SaaS founders",
+   "bfr": "Fondateurs SaaS",
+   "price": "$79/mo",
+   "_state": {
+    "product": "Churn signal detector",
+    "pitch": "Reads support messages and product feedback, flags customers about to cancel with a probability.",
+    "buyer": "SaaS founders",
+    "pricing": "$79/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92d165093a35"
+  },
+  {
+   "k": "lead_scorer",
+   "n": "lead_scoring",
+   "en": "Lead & message scorer",
+   "fr": "Scoring de leads et de messages",
+   "pen": "CRM plugin scoring every lead's buying intent and every outreach message before it is sent.",
+   "pfr": "Plugin CRM qui note l'intention d'achat de chaque lead et chaque message de prospection avant l'envoi.",
+   "ben": "Sales teams, agencies",
+   "bfr": "Équipes commerciales, agences",
+   "price": "$39/seat/mo",
+   "_state": {
+    "product": "Lead & message scorer",
+    "pitch": "CRM plugin scoring every lead's buying intent and every outreach message before it is sent.",
+    "buyer": "Sales teams, agencies",
+    "pricing": "$39/seat/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92f7f0af6722"
+  },
+  {
+   "k": "intent_monitor",
+   "n": "lead_scoring",
+   "en": "Buying-intent social monitor",
+   "fr": "Veille d'intention d'achat",
+   "pen": "Watches X, Reddit and forums for posts asking for a product like yours and alerts you within minutes.",
+   "pfr": "Surveille X, Reddit et les forums à la recherche de posts qui cherchent un produit comme le tien et t'alerte en quelques minutes.",
+   "ben": "Indie founders",
+   "bfr": "Fondateurs indés",
+   "price": "$19/mo",
+   "_state": {
+    "product": "Buying-intent social monitor",
+    "pitch": "Watches X, Reddit and forums for posts asking for a product like yours and alerts you within minutes.",
+    "buyer": "Indie founders",
+    "pricing": "$19/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92b3b74ec28a"
+  },
+  {
+   "k": "ad_spy",
+   "n": "ad_intelligence",
+   "en": "Competitor ad breakdown",
+   "fr": "Décryptage des pubs concurrentes",
+   "pen": "Weekly scan of competitors' live ads: hook, offer, CTA, awareness stage, landing mismatch.",
+   "pfr": "Scan hebdomadaire des pubs actives des concurrents : accroche, offre, CTA, niveau de conscience, incohérence de landing.",
+   "ben": "DTC brands, media buyers",
+   "bfr": "Marques DTC, media buyers",
+   "price": "$99/mo",
+   "_state": {
+    "product": "Competitor ad breakdown",
+    "pitch": "Weekly scan of competitors' live ads: hook, offer, CTA, awareness stage, landing mismatch.",
+    "buyer": "DTC brands, media buyers",
+    "pricing": "$99/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b922836caa793"
+  },
+  {
+   "k": "creative_prescore",
+   "n": "ad_intelligence",
+   "en": "Ad creative pre-scorer",
+   "fr": "Pré-score de créas publicitaires",
+   "pen": "Scores ad copy and scripts before launch against patterns of winning ads.",
+   "pfr": "Note les textes et scripts de pubs avant lancement selon les schémas des pubs gagnantes.",
+   "ben": "Performance marketers",
+   "bfr": "Marketeurs de performance",
+   "price": "$49/mo",
+   "_state": {
+    "product": "Ad creative pre-scorer",
+    "pitch": "Scores ad copy and scripts before launch against patterns of winning ads.",
+    "buyer": "Performance marketers",
+    "pricing": "$49/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9284ccb9ca8c"
+  },
+  {
+   "k": "viral_score",
+   "n": "content_virality",
+   "en": "Post virality coach",
+   "fr": "Coach de viralité",
+   "pen": "Scores a post with 60 typed questions, shows what helps and hurts, loops until the score peaks.",
+   "pfr": "Note un post avec 60 questions typées, montre ce qui aide et ce qui freine, boucle jusqu'au score maximal.",
+   "ben": "Creators",
+   "bfr": "Créateurs",
+   "price": "$12/mo",
+   "_state": {
+    "product": "Post virality coach",
+    "pitch": "Scores a post with 60 typed questions, shows what helps and hurts, loops until the score peaks.",
+    "buyer": "Creators",
+    "pricing": "$12/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9275b99104f7"
+  },
+  {
+   "k": "youtube_title",
+   "n": "content_virality",
+   "en": "YouTube title & thumbnail tester",
+   "fr": "Testeur de titres YouTube",
+   "pen": "Predicts which title and thumbnail description will pull the most clicks for a channel.",
+   "pfr": "Prédit quel titre et quelle miniature attireront le plus de clics pour une chaîne.",
+   "ben": "YouTubers",
+   "bfr": "YouTubeurs",
+   "price": "$15/mo",
+   "_state": {
+    "product": "YouTube title & thumbnail tester",
+    "pitch": "Predicts which title and thumbnail description will pull the most clicks for a channel.",
+    "buyer": "YouTubers",
+    "pricing": "$15/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b927a3190e0b4"
+  },
+  {
+   "k": "newsjack",
+   "n": "newsjacking_pr",
+   "en": "Daily newsjacking brief",
+   "fr": "Brief quotidien de newsjacking",
+   "pen": "Every morning: which stories each brand should jump on, with the angle.",
+   "pfr": "Chaque matin : quelles actus chaque marque doit reprendre, avec l'angle.",
+   "ben": "Brands, PR agencies",
+   "bfr": "Marques, agences RP",
+   "price": "$149/mo",
+   "_state": {
+    "product": "Daily newsjacking brief",
+    "pitch": "Every morning: which stories each brand should jump on, with the angle.",
+    "buyer": "Brands, PR agencies",
+    "pricing": "$149/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92db7b7ad756"
+  },
+  {
+   "k": "feed_cleaner",
+   "n": "moderation",
+   "en": "Feed cleaner extension",
+   "fr": "Extension de nettoyage de fil",
+   "pen": "Hides rage bait, engagement farming, crypto spam and politics from X, LinkedIn and Reddit.",
+   "pfr": "Masque rage bait, farming d'engagement, spam crypto et politique sur X, LinkedIn et Reddit.",
+   "ben": "Everyday users",
+   "bfr": "Grand public",
+   "price": "$3/mo",
+   "_state": {
+    "product": "Feed cleaner extension",
+    "pitch": "Hides rage bait, engagement farming, crypto spam and politics from X, LinkedIn and Reddit.",
+    "buyer": "Everyday users",
+    "pricing": "$3/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92d66a2df4d2"
+  },
+  {
+   "k": "community_mod",
+   "n": "moderation",
+   "en": "Community auto-moderator",
+   "fr": "Automodérateur de communauté",
+   "pen": "Discord / Slack bot flagging spam, scams and toxicity with probabilities, escalating edge cases.",
+   "pfr": "Bot Discord / Slack qui signale spam, arnaques et toxicité avec probabilités, et escalade les cas limites.",
+   "ben": "Community managers",
+   "bfr": "Community managers",
+   "price": "$19/server/mo",
+   "_state": {
+    "product": "Community auto-moderator",
+    "pitch": "Discord / Slack bot flagging spam, scams and toxicity with probabilities, escalating edge cases.",
+    "buyer": "Community managers",
+    "pricing": "$19/server/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92ffb97f9ffd"
+  },
+  {
+   "k": "review_mod",
+   "n": "moderation",
+   "en": "Marketplace review screener",
+   "fr": "Filtrage d'avis clients",
+   "pen": "Detects fake, off-topic or abusive reviews on marketplaces and apps.",
+   "pfr": "Détecte les avis faux, hors sujet ou abusifs sur les marketplaces et les apps.",
+   "ben": "Marketplaces",
+   "bfr": "Marketplaces",
+   "price": "usage-based",
+   "_state": {
+    "product": "Marketplace review screener",
+    "pitch": "Detects fake, off-topic or abusive reviews on marketplaces and apps.",
+    "buyer": "Marketplaces",
+    "pricing": "usage-based",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b920ba7c47050"
+  },
+  {
+   "k": "site_search",
+   "n": "search_ranking",
+   "en": "Intent reranker for site search",
+   "fr": "Reranker d'intention pour recherche",
+   "pen": "Plug-in reranker that makes Shopify or docs search understand what people mean.",
+   "pfr": "Reranker à brancher qui fait comprendre à la recherche Shopify ou d'une doc ce que les gens veulent dire.",
+   "ben": "E-commerce, docs sites",
+   "bfr": "E-commerce, sites de doc",
+   "price": "$29/mo",
+   "_state": {
+    "product": "Intent reranker for site search",
+    "pitch": "Plug-in reranker that makes Shopify or docs search understand what people mean.",
+    "buyer": "E-commerce, docs sites",
+    "pricing": "$29/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92f5c8142f8a"
+  },
+  {
+   "k": "rag_filter",
+   "n": "search_ranking",
+   "en": "RAG passage gatekeeper",
+   "fr": "Filtre de passages RAG",
+   "pen": "Scores retrieved passages, drops irrelevant or injected ones before they reach the LLM.",
+   "pfr": "Note les passages récupérés et écarte les non pertinents ou piégés avant qu'ils n'atteignent le LLM.",
+   "ben": "AI app builders",
+   "bfr": "Créateurs d'apps IA",
+   "price": "usage-based",
+   "_state": {
+    "product": "RAG passage gatekeeper",
+    "pitch": "Scores retrieved passages, drops irrelevant or injected ones before they reach the LLM.",
+    "buyer": "AI app builders",
+    "pricing": "usage-based",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92900df8c987"
+  },
+  {
+   "k": "adaptive_landing",
+   "n": "adaptive_ui",
+   "en": "Adaptive landing pages",
+   "fr": "Landing pages adaptatives",
+   "pen": "Reorders sections and CTAs per visitor from their referrer and behavior, in real time.",
+   "pfr": "Réorganise sections et CTA pour chaque visiteur selon sa provenance et son comportement, en temps réel.",
+   "ben": "SaaS marketers",
+   "bfr": "Marketeurs SaaS",
+   "price": "$49/mo",
+   "_state": {
+    "product": "Adaptive landing pages",
+    "pitch": "Reorders sections and CTAs per visitor from their referrer and behavior, in real time.",
+    "buyer": "SaaS marketers",
+    "pricing": "$49/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9210bab11755"
+  },
+  {
+   "k": "predictive_launcher",
+   "n": "adaptive_ui",
+   "en": "Predictive launcher",
+   "fr": "Lanceur prédictif",
+   "pen": "Spotlight-style launcher that understands 'the pdf I just downloaded'.",
+   "pfr": "Lanceur type Spotlight qui comprend « le pdf que je viens de télécharger ».",
+   "ben": "Mac power users",
+   "bfr": "Utilisateurs Mac avancés",
+   "price": "$5/mo",
+   "_state": {
+    "product": "Predictive launcher",
+    "pitch": "Spotlight-style launcher that understands 'the pdf I just downloaded'.",
+    "buyer": "Mac power users",
+    "pricing": "$5/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92c7cdf7d233"
+  },
+  {
+   "k": "npc_sdk",
+   "n": "game_bots",
+   "en": "Reactive NPC SDK",
+   "fr": "SDK de PNJ réactifs",
+   "pen": "Unity / Godot plugin giving NPCs fast decisions at 10 Hz for pennies per hour of play.",
+   "pfr": "Plugin Unity / Godot qui donne aux PNJ des décisions rapides à 10 Hz pour quelques centimes par heure de jeu.",
+   "ben": "Indie game devs",
+   "bfr": "Devs de jeux indés",
+   "price": "per-game license",
+   "_state": {
+    "product": "Reactive NPC SDK",
+    "pitch": "Unity / Godot plugin giving NPCs fast decisions at 10 Hz for pennies per hour of play.",
+    "buyer": "Indie game devs",
+    "pricing": "per-game license",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b926fba9d16fb"
+  },
+  {
+   "k": "game_qa",
+   "n": "game_bots",
+   "en": "Game playtesting bots",
+   "fr": "Bots de playtest",
+   "pen": "Hundreds of System One-driven players that find exploits and soft-locks before launch.",
+   "pfr": "Des centaines de joueurs pilotés par System One qui trouvent exploits et blocages avant la sortie.",
+   "ben": "Game studios",
+   "bfr": "Studios de jeu",
+   "price": "$199/mo",
+   "_state": {
+    "product": "Game playtesting bots",
+    "pitch": "Hundreds of System One-driven players that find exploits and soft-locks before launch.",
+    "buyer": "Game studios",
+    "pricing": "$199/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92f42e979ed1"
+  },
+  {
+   "k": "trade_filter",
+   "n": "trading_signals",
+   "en": "Signal sanity filter",
+   "fr": "Filtre de signaux de trading",
+   "pen": "Scores news and signals for relevance and risk before a strategy acts (not financial advice).",
+   "pfr": "Note l'actualité et les signaux (pertinence, risque) avant qu'une stratégie n'agisse (pas un conseil financier).",
+   "ben": "Algo traders",
+   "bfr": "Traders algorithmiques",
+   "price": "$29/mo",
+   "_state": {
+    "product": "Signal sanity filter",
+    "pitch": "Scores news and signals for relevance and risk before a strategy acts (not financial advice).",
+    "buyer": "Algo traders",
+    "pricing": "$29/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92454906a2c7"
+  },
+  {
+   "k": "drone_brain",
+   "n": "robotics_iot",
+   "en": "Decision layer for hobby robots",
+   "fr": "Couche de décision pour robots",
+   "pen": "ROS / Raspberry Pi package turning sensor state into fast typed decisions.",
+   "pfr": "Package ROS / Raspberry Pi qui transforme l'état des capteurs en décisions typées rapides.",
+   "ben": "Makers, robotics labs",
+   "bfr": "Makers, labos de robotique",
+   "price": "license",
+   "_state": {
+    "product": "Decision layer for hobby robots",
+    "pitch": "ROS / Raspberry Pi package turning sensor state into fast typed decisions.",
+    "buyer": "Makers, robotics labs",
+    "pricing": "license",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92bbea1bc8fd"
+  },
+  {
+   "k": "jev_zapier",
+   "n": "dev_integration",
+   "en": "System One for Zapier / n8n / Make",
+   "fr": "System One pour Zapier / n8n / Make",
+   "pen": "No-code 'Decide' step: classify, score or route anything inside automations.",
+   "pfr": "Étape no-code « Décider » : classer, noter ou aiguiller n'importe quoi dans les automatisations.",
+   "ben": "No-code builders",
+   "bfr": "Créateurs no-code",
+   "price": "marketplace",
+   "_state": {
+    "product": "System One for Zapier / n8n / Make",
+    "pitch": "No-code 'Decide' step: classify, score or route anything inside automations.",
+    "buyer": "No-code builders",
+    "pricing": "marketplace",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b922d1105a104"
+  },
+  {
+   "k": "jev_mcp",
+   "n": "dev_integration",
+   "en": "System One MCP server",
+   "fr": "Serveur MCP System One",
+   "pen": "MCP server exposing typed decisions to any agent, with caching and cost dashboards.",
+   "pfr": "Serveur MCP qui expose des décisions typées à n'importe quel agent, avec cache et suivi des coûts.",
+   "ben": "Agent developers",
+   "bfr": "Développeurs d'agents",
+   "price": "$9/mo",
+   "_state": {
+    "product": "System One MCP server",
+    "pitch": "MCP server exposing typed decisions to any agent, with caching and cost dashboards.",
+    "buyer": "Agent developers",
+    "pricing": "$9/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92940560fc99"
+  },
+  {
+   "k": "jev_course",
+   "n": "education_content",
+   "en": "Build-with-System One course",
+   "fr": "Formation « construire avec System One »",
+   "pen": "Templates and lessons for the 10 most profitable System One patterns.",
+   "pfr": "Templates et leçons pour les 10 patterns System One les plus rentables.",
+   "ben": "Developers",
+   "bfr": "Développeurs",
+   "price": "$49 one-off",
+   "_state": {
+    "product": "Build-with-System One course",
+    "pitch": "Templates and lessons for the 10 most profitable System One patterns.",
+    "buyer": "Developers",
+    "pricing": "$49 one-off",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9235a0f78f02"
+  },
+  {
+   "k": "resume_screen",
+   "n": null,
+   "en": "Resume & application screener",
+   "fr": "Tri de candidatures",
+   "pen": "Scores applications against a role's must-haves with explainable typed checks.",
+   "pfr": "Note chaque candidature selon les critères indispensables du poste, avec des contrôles typés explicables.",
+   "ben": "Recruiters, SMBs",
+   "bfr": "Recruteurs, PME",
+   "price": "$49/mo",
+   "_state": {
+    "product": "Resume & application screener",
+    "pitch": "Scores applications against a role's must-haves with explainable typed checks.",
+    "buyer": "Recruiters, SMBs",
+    "pricing": "$49/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92375415a59d"
+  },
+  {
+   "k": "contract_flags",
+   "n": null,
+   "en": "Contract clause flagger",
+   "fr": "Détecteur de clauses de contrat",
+   "pen": "Flags risky clauses (auto-renewal, liability, IP) in contracts in seconds.",
+   "pfr": "Repère en quelques secondes les clauses risquées (reconduction, responsabilité, PI) dans les contrats.",
+   "ben": "Freelancers, SMBs",
+   "bfr": "Freelances, PME",
+   "price": "$19/mo",
+   "_state": {
+    "product": "Contract clause flagger",
+    "pitch": "Flags risky clauses (auto-renewal, liability, IP) in contracts in seconds.",
+    "buyer": "Freelancers, SMBs",
+    "pricing": "$19/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b927ef872d244"
+  },
+  {
+   "k": "invoice_triage",
+   "n": null,
+   "en": "Invoice & receipt categorizer",
+   "fr": "Catégorisation de factures",
+   "pen": "Categorizes receipts and invoices for bookkeeping and flags anomalies.",
+   "pfr": "Catégorise reçus et factures pour la compta et signale les anomalies.",
+   "ben": "Accountants, freelancers",
+   "bfr": "Comptables, freelances",
+   "price": "$15/mo",
+   "_state": {
+    "product": "Invoice & receipt categorizer",
+    "pitch": "Categorizes receipts and invoices for bookkeeping and flags anomalies.",
+    "buyer": "Accountants, freelancers",
+    "pricing": "$15/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92052c85b5ca"
+  },
+  {
+   "k": "listing_quality",
+   "n": null,
+   "en": "Marketplace listing optimizer",
+   "fr": "Optimiseur d'annonces",
+   "pen": "Scores Etsy / Amazon / Airbnb listings on the factors that drive conversion.",
+   "pfr": "Note les annonces Etsy / Amazon / Airbnb sur les facteurs qui font convertir.",
+   "ben": "Sellers, hosts",
+   "bfr": "Vendeurs, hôtes",
+   "price": "$15/mo",
+   "_state": {
+    "product": "Marketplace listing optimizer",
+    "pitch": "Scores Etsy / Amazon / Airbnb listings on the factors that drive conversion.",
+    "buyer": "Sellers, hosts",
+    "pricing": "$15/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b920488246cf0"
+  },
+  {
+   "k": "product_taxonomy",
+   "n": null,
+   "en": "Product catalog categorizer",
+   "fr": "Catégorisation de catalogue",
+   "pen": "Maps thousands of SKUs into a taxonomy with confidence, sends doubtful ones to a human.",
+   "pfr": "Range des milliers de références dans une taxonomie avec un niveau de confiance, envoie les cas douteux à un humain.",
+   "ben": "E-commerce ops",
+   "bfr": "Ops e-commerce",
+   "price": "usage-based",
+   "_state": {
+    "product": "Product catalog categorizer",
+    "pitch": "Maps thousands of SKUs into a taxonomy with confidence, sends doubtful ones to a human.",
+    "buyer": "E-commerce ops",
+    "pricing": "usage-based",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9200c92bcc80"
+  },
+  {
+   "k": "real_estate_match",
+   "n": null,
+   "en": "Property-buyer matcher",
+   "fr": "Matching biens-acheteurs",
+   "pen": "Scores listings against each buyer's written wishes and alerts on strong matches.",
+   "pfr": "Note les annonces selon les souhaits écrits de chaque acheteur et alerte sur les meilleures correspondances.",
+   "ben": "Real estate agents",
+   "bfr": "Agents immobiliers",
+   "price": "$39/mo",
+   "_state": {
+    "product": "Property-buyer matcher",
+    "pitch": "Scores listings against each buyer's written wishes and alerts on strong matches.",
+    "buyer": "Real estate agents",
+    "pricing": "$39/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9216065a2220"
+  },
+  {
+   "k": "job_alerts",
+   "n": null,
+   "en": "Smart job alerts",
+   "fr": "Alertes emploi intelligentes",
+   "pen": "Reads every new job post and keeps only the ones that truly match a candidate.",
+   "pfr": "Lit chaque nouvelle offre d'emploi et ne garde que celles qui correspondent vraiment au candidat.",
+   "ben": "Job seekers",
+   "bfr": "Chercheurs d'emploi",
+   "price": "$7/mo",
+   "_state": {
+    "product": "Smart job alerts",
+    "pitch": "Reads every new job post and keeps only the ones that truly match a candidate.",
+    "buyer": "Job seekers",
+    "pricing": "$7/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b920d2cf4846f"
+  },
+  {
+   "k": "grant_finder",
+   "n": null,
+   "en": "Grant & tender matcher",
+   "fr": "Matching d'appels d'offres",
+   "pen": "Scans public tenders and grants daily and ranks them for each company.",
+   "pfr": "Parcourt chaque jour les appels d'offres et subventions publics et les classe pour chaque entreprise.",
+   "ben": "SMBs, consultancies",
+   "bfr": "PME, cabinets",
+   "price": "$59/mo",
+   "_state": {
+    "product": "Grant & tender matcher",
+    "pitch": "Scans public tenders and grants daily and ranks them for each company.",
+    "buyer": "SMBs, consultancies",
+    "pricing": "$59/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b921129199b8c"
+  },
+  {
+   "k": "med_intake",
+   "n": null,
+   "en": "Clinic message triage",
+   "fr": "Tri des messages de cabinet médical",
+   "pen": "Routes patient messages by urgency and type for small clinics (human in the loop).",
+   "pfr": "Aiguille les messages patients par urgence et par type pour les petits cabinets (avec validation humaine).",
+   "ben": "Clinics",
+   "bfr": "Cabinets",
+   "price": "$79/mo",
+   "_state": {
+    "product": "Clinic message triage",
+    "pitch": "Routes patient messages by urgency and type for small clinics (human in the loop).",
+    "buyer": "Clinics",
+    "pricing": "$79/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92469c713f1e"
+  },
+  {
+   "k": "edu_grader",
+   "n": null,
+   "en": "Quiz & short-answer grader",
+   "fr": "Correction de réponses courtes",
+   "pen": "Grades short answers against rubrics instantly with confidence, flags borderline cases.",
+   "pfr": "Corrige instantanément les réponses courtes selon une grille, avec confiance, et signale les cas limites.",
+   "ben": "Teachers, course creators",
+   "bfr": "Enseignants, formateurs",
+   "price": "$9/mo",
+   "_state": {
+    "product": "Quiz & short-answer grader",
+    "pitch": "Grades short answers against rubrics instantly with confidence, flags borderline cases.",
+    "buyer": "Teachers, course creators",
+    "pricing": "$9/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b928ca4a002d0"
+  },
+  {
+   "k": "review_insights",
+   "n": null,
+   "en": "Review insights for apps",
+   "fr": "Analyse des avis d'apps",
+   "pen": "Turns App Store and Play reviews into typed issues, trends and priorities.",
+   "pfr": "Transforme les avis App Store et Play en problèmes typés, tendances et priorités.",
+   "ben": "Mobile teams",
+   "bfr": "Équipes mobile",
+   "price": "$29/mo",
+   "_state": {
+    "product": "Review insights for apps",
+    "pitch": "Turns App Store and Play reviews into typed issues, trends and priorities.",
+    "buyer": "Mobile teams",
+    "pricing": "$29/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9213e35b7afe"
+  },
+  {
+   "k": "seo_intent",
+   "n": null,
+   "en": "Search-intent keyword sorter",
+   "fr": "Tri de mots-clés par intention",
+   "pen": "Labels thousands of keywords by intent, funnel stage and topic cluster.",
+   "pfr": "Classe des milliers de mots-clés par intention, étape du funnel et cluster thématique.",
+   "ben": "SEO agencies",
+   "bfr": "Agences SEO",
+   "price": "$29/mo",
+   "_state": {
+    "product": "Search-intent keyword sorter",
+    "pitch": "Labels thousands of keywords by intent, funnel stage and topic cluster.",
+    "buyer": "SEO agencies",
+    "pricing": "$29/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92f2d8a2769f"
+  },
+  {
+   "k": "compliance_screen",
+   "n": null,
+   "en": "Marketing compliance screener",
+   "fr": "Contrôle de conformité marketing",
+   "pen": "Checks ads and emails for risky claims (health, finance) before they ship.",
+   "pfr": "Vérifie pubs et emails pour repérer les affirmations risquées (santé, finance) avant envoi.",
+   "ben": "Regulated brands",
+   "bfr": "Marques réglementées",
+   "price": "$99/mo",
+   "_state": {
+    "product": "Marketing compliance screener",
+    "pitch": "Checks ads and emails for risky claims (health, finance) before they ship.",
+    "buyer": "Regulated brands",
+    "pricing": "$99/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b92c9eba33234"
+  },
+  {
+   "k": "phishing_guard",
+   "n": null,
+   "en": "Phishing & scam email guard",
+   "fr": "Protection anti-phishing",
+   "pen": "Scores each email and link for scam likelihood for small teams without a SOC.",
+   "pfr": "Note la probabilité d'arnaque de chaque email et lien, pour les petites équipes sans SOC.",
+   "ben": "Small businesses",
+   "bfr": "Petites entreprises",
+   "price": "$4/user/mo",
+   "_state": {
+    "product": "Phishing & scam email guard",
+    "pitch": "Scores each email and link for scam likelihood for small teams without a SOC.",
+    "buyer": "Small businesses",
+    "pricing": "$4/user/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b926362cec507"
+  },
+  {
+   "k": "meeting_actions",
+   "n": null,
+   "en": "Meeting follow-up router",
+   "fr": "Routeur de suites de réunion",
+   "pen": "Classifies transcript segments into decisions, tasks and owners, pushes them to tools.",
+   "pfr": "Classe les passages d'une transcription en décisions, tâches et responsables, et les pousse dans les outils.",
+   "ben": "Remote teams",
+   "bfr": "Équipes à distance",
+   "price": "$8/seat/mo",
+   "_state": {
+    "product": "Meeting follow-up router",
+    "pitch": "Classifies transcript segments into decisions, tasks and owners, pushes them to tools.",
+    "buyer": "Remote teams",
+    "pricing": "$8/seat/mo",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9215053824ea"
+  },
+  {
+   "k": "doc_router",
+   "n": null,
+   "en": "Document intake router",
+   "fr": "Aiguillage de documents",
+   "pen": "Sorts incoming PDFs (IDs, invoices, contracts, forms) and routes each to the right workflow.",
+   "pfr": "Trie les PDF entrants (pièces d'identité, factures, contrats, formulaires) et envoie chacun vers le bon workflow.",
+   "ben": "Back offices",
+   "bfr": "Back-offices",
+   "price": "usage-based",
+   "_state": {
+    "product": "Document intake router",
+    "pitch": "Sorts incoming PDFs (IDs, invoices, contracts, forms) and routes each to the right workflow.",
+    "buyer": "Back offices",
+    "pricing": "usage-based",
+    "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+   },
+   "_h": "b15d8b9234f9d0a856"
+  }
+ ],
+ "criteria": {
+  "pain": [
+   "Nice to have, nobody pays for this today",
+   "Mild annoyance",
+   "Real recurring pain",
+   "Costly problem teams already spend money on",
+   "Critical problem with an obvious budget"
+  ],
+  "recurring": [
+   "One-off purchase at best",
+   "Occasional use",
+   "Monthly use is plausible",
+   "Used every week, subscription feels natural",
+   "Used every day, usage-based billing grows by itself"
+  ],
+  "automation": [
+   "Needs the owner's constant manual work",
+   "Frequent manual intervention",
+   "Some support and tuning",
+   "Mostly runs by itself",
+   "Fully self-serve, runs unattended"
+  ],
+  "jev_fit": [
+   "Needs long text generation, System One does not help",
+   "System One helps marginally",
+   "System One handles an important part",
+   "The core is fast typed decisions, ideal for System One",
+   "Impossible or uneconomic without System One's speed and price"
+  ],
+  "open_market": [
+   "Crowded with strong incumbents",
+   "Several good competitors",
+   "Some competition",
+   "Few serious competitors",
+   "Wide open"
+  ],
+  "build_ease": [
+   "Needs a large team and months",
+   "Hard for a solo developer",
+   "A few weeks for a solo developer",
+   "An MVP in about a week",
+   "An MVP in a weekend"
+  ]
+ },
+ "questions_text": {
+  "pain": "How painful and costly is the problem this product solves for its buyer?",
+  "recurring": "How naturally does this product generate recurring revenue?",
+  "automation": "Once built, how much can this product run without its owner's ongoing work?",
+  "jev_fit": "How much does this product's core rely on fast, cheap, typed decisions (System One's strength) rather than generated text?",
+  "open_market": "How open is the market for this product today?",
+  "build_ease": "How easy is it for a solo developer to ship a first version?"
+ },
+ "weights": {
+  "pain": 0.2,
+  "recurring": 0.2,
+  "automation": 0.2,
+  "jev_fit": 0.15,
+  "open_market": 0.1,
+  "build_ease": 0.05,
+  "x_signal": 0.1
+ },
+ "engine": "System One: a model that returns fast typed decisions (choice, score, yes/no probability) for $0.042 per million input tokens, in ~100-500 ms. It cannot generate text."
+}

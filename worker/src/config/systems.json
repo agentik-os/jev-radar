@@ -1,0 +1,158 @@
+{
+ "2100411066966749359": {
+  "fr": "Agent navigateur open source (Browser Use). À chaque étape, l'état du DOM est envoyé à System One avec la liste des actions possibles ; System One choisit l'action (cliquer, scroller…), et un petit LLM ne sert qu'à taper du texte. Recherche de vols en 7 s pour 0,0039 $.",
+  "en": "Open source browser agent (Browser Use). At each step the DOM state and the possible actions go to System One, which picks the action (click, scroll…); a small LLM only types text. Found flights in 7 s for $0.0039."
+ },
+ "2100739055923425589": {
+  "fr": "Plugin Claude (fast-jev-compaction) : au lieu de résumer la conversation avec un LLM, System One juge chaque appel d'outil passé (« encore utile ? ») et supprime les inutiles. Une session passe de ~1M à 86k tokens en 1 s. Code : github.com/tamaratran/fast-jev-compaction.",
+  "en": "Claude plugin (fast-jev-compaction): instead of summarizing the conversation with an LLM, System One judges every past tool call (still useful?) and drops the useless ones. A session goes from ~1M to 86k tokens in 1 s. Code: github.com/tamaratran/fast-jev-compaction."
+ },
+ "2100086301894881578": {
+  "fr": "Bot Super Mario Bros : l'émulateur est lu, l'état du jeu est structuré en texte et System One choisit la prochaine touche en temps réel. Code : github.com/fhshaik/typesafe-mario.",
+  "en": "Super Mario Bros bot: the emulator state is structured as text and System One picks the next button in real time. Code: github.com/fhshaik/typesafe-mario."
+ },
+ "2100372930282573876": {
+  "fr": "Benchmark échecs en blitz 5+0 : chaque coup = un appel API. System One perd en qualité de jeu contre Fable 5.1 mais joue en quelques centaines de ms là où les LLM mettent 6 à 15 s par coup.",
+  "en": "Blitz chess 5+0 benchmark: every move is one API call. System One loses on play quality to Fable 5.1 but moves in a few hundred ms while LLMs spend 6-15 s per move."
+ },
+ "2100287208166969746": {
+  "fr": "Tests d'apps automatisés : System One pilote l'app via le CLI browser-use d'opencode et décide des actions de test, beaucoup plus vite qu'un agent LLM.",
+  "en": "Automated app testing: System One drives the app through opencode's browser-use CLI and decides the test actions, much faster than an LLM agent."
+ },
+ "2100042788851101842": {
+  "fr": "Classement de 1 500 emails personnels exportés, par lots de 100 avec 8 workers en parallèle : System One attribue une catégorie à chaque email.",
+  "en": "Classifying 1,500 exported personal emails, in batches of 100 with 8 parallel workers: System One assigns a category to each email."
+ },
+ "2100307962262872105": {
+  "fr": "Vercel fx (mode auto) : chaque commande shell proposée par l'agent passe par un relecteur de sécurité. System One remplace GPT Luna comme relecteur, jusqu'à 18× plus rapide (p95) et plus précis.",
+  "en": "Vercel fx (auto mode): every shell command the agent proposes goes through a safety reviewer. System One replaces GPT Luna as the reviewer, up to 18x faster (p95) and more accurate."
+ },
+ "2100300097695232164": {
+  "fr": "Benchmark du classifieur de sécurité de fx (auto mode) : System One décide si une commande est sûre. 5 à 18× plus rapide et plus précis que GPT-5.6 Luna.",
+  "en": "Benchmark of fx's safety classifier (auto mode): System One decides whether a command is safe. 5-18x faster and more accurate than GPT-5.6 Luna."
+ },
+ "2100767781868150938": {
+  "fr": "« Probably », un langage de programmation jouet où System One est intégré au langage : `feels` pose une question oui/non, `match` aiguille entre des descriptions, `while` boucle tant qu'une condition « semble vraie ».",
+  "en": "'Probably', a toy programming language with System One built in: `feels` asks a yes/no question, `match` routes between descriptions, `while` loops while something still 'feels true'."
+ },
+ "2100288951978164647": {
+  "fr": "Démo de navigation web ultra-rapide : le CLI browser-use d'opencode, avec System One qui choisit chaque action sur la page.",
+  "en": "Ultra-fast web navigation demo: opencode's browser-use CLI with System One picking every action on the page."
+ },
+ "2100649543079502213": {
+  "fr": "« jev-use » de Cua : pilotage d'ordinateur (macOS, Windows, Linux) où System One choisit les actions à l'écran via le Cua Driver. Code : github.com/trycua/cua.",
+  "en": "Cua's 'jev-use': computer control (macOS, Windows, Linux) where System One picks on-screen actions through the Cua Driver. Code: github.com/trycua/cua."
+ },
+ "2100585126652481915": {
+  "fr": "Relecture de pull requests : le diff est envoyé en un seul appel avec 14 questions (secret en dur, injection SQL, touche l'auth, supprime des tests, casse l'API, migration, description cohérente…). 0,00007 $ par PR, réponse en 0,5 s.",
+  "en": "Pull request review: the diff is sent in one call with 14 typed checks (hardcoded secret, SQL injection, touches auth, deletes tests, breaks API, migration, description matches diff…). $0.00007 per PR, answer in 0.5 s."
+ },
+ "2100408276949385668": {
+  "fr": "System One « qui parle » : à chaque pas, System One choisit le mot suivant parmi quelques centaines de mots anglais courants et la ponctuation, et construit des phrases par une suite de choix.",
+  "en": "System One 'talking': at each step System One picks the next word among a few hundred common English words and punctuation, building sentences out of choices."
+ },
+ "2100378959653507175": {
+  "fr": "Intégration Vercel AI Gateway : System One est appelable via le modèle `typesafe-ai/jev` avec state + questions, pour des agents qui décident, routent, notent et s'arrêtent en millisecondes.",
+  "en": "Vercel AI Gateway integration: call System One as `typesafe-ai/jev` with state + questions, for agents that decide, route, score and stop in milliseconds."
+ },
+ "2100756930054504776": {
+  "fr": "Lanceur prédictif : à chaque frappe, System One classe les fichiers et apps selon l'intention (« le pdf que je viens de télécharger ») au lieu d'une recherche floue par nom.",
+  "en": "Predictive launcher: on every keystroke System One ranks files and apps by intent ('the pdf I just downloaded') instead of fuzzy name matching."
+ },
+ "2100262612428894676": {
+  "fr": "Pilotage d'ordinateur : System One choisit l'élément sur lequel cliquer parmi ceux de la page, à chaque étape. 155× moins cher qu'Opus 5 et ~20× plus rapide.",
+  "en": "Computer use: System One picks which element to click among those on the page, step by step. 155x cheaper than Opus 5 and ~20x faster."
+ },
+ "2100577979021832365": {
+  "fr": "Navigateur piloté à la voix : la parole est transcrite, la transcription et les liens de la page sont envoyés à System One, qui renvoie des probabilités en ~300 ms, et le navigateur clique. 0,0002 $ par décision.",
+  "en": "Voice-controlled browser: speech is transcribed, the transcript plus page links go to System One, which returns probabilities in ~300 ms, and the browser clicks. $0.0002 per decision."
+ },
+ "2100634359099232678": {
+  "fr": "Bot Subway Surfers : pour chaque couloir (gauche, milieu, droite), System One estime la probabilité de survie et le bot va dans le meilleur. Il joue 50 parties en parallèle pour moins d'un centime.",
+  "en": "Subway Surfers bot: for each lane (left, middle, right) System One estimates the survival probability and the bot moves to the best one. Plays 50 games in parallel for under a cent."
+ },
+ "2100404532119269426": {
+  "fr": "Classement de 500 emails en quelques secondes pour 3,5 centimes.",
+  "en": "Classified 500 emails in seconds for 3.5 cents."
+ },
+ "2100269198727602468": {
+  "fr": "Remplacement d'un classifieur existant basé sur Gemini 2.5 Flash Lite : System One sature l'éval existante (qualité maximale) et va 6× plus vite.",
+  "en": "Replacing an existing Gemini 2.5 Flash Lite classifier: System One saturates the existing eval and runs 6x faster."
+ },
+ "2100489858951073858": {
+  "fr": "Résolution de Rubik's cube : la méthode débutant est codée en dur (croix, coins, couronne…), et à chaque étape System One regarde le cube et identifie le cas en cours. 94 coups, comme un humain.",
+  "en": "Rubik's cube solver: the beginner method is hard-coded (cross, corners, middle layer…) and at each step System One looks at the cube and identifies the current case. 94 moves, like a human."
+ },
+ "2100738237237002706": {
+  "fr": "Smash Bros : System One contrôle les 4 personnages et choisit le meilleur coup de chacun en une fraction de seconde. 22 millions de tokens pour quelques centimes.",
+  "en": "Smash Bros: System One controls all 4 characters and picks each one's best move in a fraction of a second. 22 million tokens for a few cents."
+ },
+ "2100088523403432357": {
+  "fr": "Benchmark indépendant : System One contre GPT-5.6 Terra sans raisonnement, sur des QCM (MMLU, GPQA…). Conclusion de l'auteur : System One est au niveau de Terra.",
+  "en": "Independent benchmark: System One vs GPT-5.6 Terra without reasoning on multiple-choice tests (MMLU, GPQA…). Author's verdict: System One is Terra-tier."
+ },
+ "2100426558863458770": {
+  "fr": "Analyse (en japonais) du bot Mario open source : l'émulateur donne l'état du jeu, qui est structuré puis envoyé à System One, et System One estime la prochaine action. Code : github.com/fhshaik/typesafe-mario.",
+  "en": "Breakdown (in Japanese) of the open source Mario bot: the emulator gives the game state, which is structured and sent to System One, which estimates the next action. Code: github.com/fhshaik/typesafe-mario."
+ },
+ "2100882207879434359": {
+  "fr": "Tests adversariaux massivement parallèles : à chaque release, des navigateurs pilotés par System One tentent de casser l'app, pour quelques centimes.",
+  "en": "Massively parallel adversarial testing: on every release, System One-driven browsers try to break the app, for pennies."
+ },
+ "2100722975645598191": {
+  "fr": "Score de viralité (SuperX) : 61 questions System One par post, un modèle ajusté sur 9 481 posts réels de 207 créateurs, et une boucle « écrire, scorer, réécrire » jusqu'à ce que le score plafonne.",
+  "en": "Virality score (SuperX): 61 System One questions per post, a model fitted on 9,481 real posts from 207 creators, and a write-score-rewrite loop until the score peaks."
+ },
+ "2100702649834188855": {
+  "fr": "Permissions par intention pour opencode : les règles sont écrites en langage naturel (« seulement Google »), et System One juge chaque commande ou URL tentée par l'agent au lieu d'une liste de commandes à prévoir.",
+  "en": "Intent-based permissions for opencode: rules are written in plain language ('only Google') and System One judges every command or URL the agent tries, instead of listing commands in advance."
+ },
+ "2100426999546184123": {
+  "fr": "1 018 articles de recherche IA : DeepSeek V4 Flash résume chaque article, puis titre + résumé + 24 thèmes sont envoyés à System One, qui classe. 0,08 $ au total, 256 ms par article. Site : 1kpapers.com.",
+  "en": "1,018 AI research papers: DeepSeek V4 Flash summarizes each paper, then title + summary + 24 topics go to System One, which classifies. $0.08 total, 256 ms per paper. Site: 1kpapers.com."
+ },
+ "2100688880798159254": {
+  "fr": "Intégration Cloudflare AI Gateway : System One est disponible comme modèle via la passerelle de Cloudflare.",
+  "en": "Cloudflare AI Gateway integration: System One is available as a model through Cloudflare's gateway."
+ },
+ "2100590065357639971": {
+  "fr": "Chat « sans génération » (Japon) : System One prédit la suite du texte en choisissant parmi des candidats, ce qui donne un chat très rapide où la sortie ne coûte rien.",
+  "en": "'Generation-free' chat (Japan): System One predicts the next text by choosing among candidates, giving a very fast chat whose output costs nothing."
+ },
+ "2100780008193020049": {
+  "fr": "Tableur prédictif : en tapant « Urgency » en haut d'une colonne, System One comprend l'échelle voulue et note chaque ligne de « pas de suivi » à « urgent » en ~100 ms.",
+  "en": "Predictive spreadsheet: type 'Urgency' at the top of a column and System One infers the scale and rates every row from 'no follow-up' to 'urgent' in ~100 ms."
+ },
+ "2100727660875808913": {
+  "fr": "Minecraft à deux cerveaux : System One prend les décisions rapides (combat, fuite) pendant que GPT-6 Astra planifie. Ils combattent plusieurs zombies à la fois.",
+  "en": "Two-brain Minecraft: System One makes the fast decisions (fight, flee) while GPT-6 Astra plans ahead. They fight several zombies at once."
+ },
+ "2100864907046768890": {
+  "fr": "« System One Use » pour Codex (Chine) : System One sert de couche de décision qui dit à Codex quoi faire à l'écran. Comparaison vidéo sur l'ajout d'un événement au calendrier Mac.",
+  "en": "'System One Use' for Codex (China): System One is the decision layer telling Codex what to do on screen. Side-by-side video on adding a Mac calendar event."
+ },
+ "2100335978229690683": {
+  "fr": "Pilotage de drone : l'état du drone est envoyé à System One, qui choisit la manœuvre suivante. Fait en 15 min pour 10 centimes. Code : github.com/RomanSlack/jev-drone.",
+  "en": "Drone control: the drone state goes to System One, which picks the next maneuver. Built in 15 min for 10 cents. Code: github.com/RomanSlack/jev-drone."
+ },
+ "2100370557405667768": {
+  "fr": "Extension DuckDB : une fonction SQL qui classe chaque ligne d'un CSV, d'un Parquet ou d'une table avec System One. ~10 s pour 1 000 lignes.",
+  "en": "DuckDB extension: a SQL function that classifies every row of a CSV, Parquet file or table with System One. ~10 s for 1,000 rows."
+ },
+ "2100654891756589230": {
+  "fr": "Analyse de 724 pubs actives de 37 marques en 40 s pour 9 centimes : accroche, format, offre, CTA, niveau de conscience du client, cohérence avec la landing page. Bientôt dans StealAds et en MCP.",
+  "en": "Analysis of 724 live ads from 37 brands in 40 s for 9 cents: hook, format, offer, CTA, awareness stage, landing page match. Coming to StealAds and as an MCP."
+ },
+ "2100951347080421409": {
+  "fr": "Newsjacking : 384 articles du matin passés en revue pour 15 marques (« quelle actu reprendre aujourd'hui ? ») en 25 s pour 0,19 $. Opus 5 n'en traitait que 4 dans le même temps. Code : newsjack.sh (dossier demo/).",
+  "en": "Newsjacking: 384 morning stories reviewed for 15 brands ('which story to jump on today?') in 25 s for $0.19. Opus 5 got through only 4 in the same time. Code: newsjack.sh (demo/ folder)."
+ },
+ "2100891604735099103": {
+  "fr": "Prospection : 700 leads et leurs messages personnalisés. System One prédit la performance de chaque message, donne un score de confiance et repère les messages mal adaptés au lead. 9 centimes. Bientôt dans Gojiberry.",
+  "en": "Outreach: 700 leads and their personalized messages. System One predicts each message's performance, gives a confidence score and flags lead-message mismatches. 9 cents. Coming to Gojiberry."
+ },
+ "2100715237267660873": {
+  "fr": "Tutoriel vidéo de 22 min : explication de System One, configuration de l'API, puis 3 démos (navigateur à la voix, mémoire d'IA, prédiction YouTube).",
+  "en": "22-min video tutorial: what System One is, API setup, then 3 demos (voice-controlled browser, AI memory, YouTube predictor)."
+ }
+}

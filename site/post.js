@@ -1,8 +1,8 @@
-// /post : page privée pour répondre à la main, sur X, à chaque post qui parle de Jev.
+// /post : page privée pour répondre à la main, sur X, à chaque post qui parle de System One.
 // Brouillon par post -> intent X pré-rempli (in_reply_to) -> publication manuelle -> validation.
 // Validation automatique : on lit les réponses publiques de @Agentik_os (fxtwitter) et on coche les posts répondus.
 const SELF = "agentik_os";
-const SITE = "https://jev.agentik-os.com";
+const SITE = location.origin;
 const PAGE = 25;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -24,59 +24,59 @@ $("#theme").onclick = () => { const th = document.documentElement.dataset.theme 
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2200); }
 
 // ---------- brouillons ----------
-// Chaque réponse : une accroche liée au post, la promesse (gratuit, tout Jev au même endroit, mis à jour chaque heure)
+// Chaque réponse : une accroche liée au post, la promesse (gratuit, tout System One au même endroit, mis à jour chaque heure)
 // et le lien vers la fiche du post sur le radar : l'auteur y voit son propre post, ce qui l'incite à la partager.
 const EN = {
   build_demo: [
-    "This is the kind of Jev build people need to see{nm}. It's now on Jev Radar{rk}: a free hub that tracks every Jev build, demo and debate on X, updated hourly.\n\n{link}",
-    "Great demo{nm}. Logged it on Jev Radar, the free place where every Jev build gets collected and explained in plain English. Yours is here 👇\n{link}",
-    "Added this to Jev Radar{rk}. Free, no signup: every Jev project on X in one place, refreshed every hour. Yours has its own page:\n{link}",
+    "This is the kind of System One build people need to see{nm}. It's now on AGK Radar{rk}: a free hub that tracks every System One build, demo and debate on X, updated hourly.\n\n{link}",
+    "Great demo{nm}. Logged it on AGK Radar, the free place where every System One build gets collected and explained in plain English. Yours is here 👇\n{link}",
+    "Added this to AGK Radar{rk}. Free, no signup: every System One project on X in one place, refreshed every hour. Yours has its own page:\n{link}",
   ],
   integration: [
-    "Nice integration{nm}. We collect every Jev integration in one free place so builders stop digging through threads. Yours is in 👇\n{link}",
-    "Saved this on Jev Radar{rk}: the free hub with every Jev integration, build and explainer from X, updated hourly.\n{link}",
+    "Nice integration{nm}. We collect every System One integration in one free place so builders stop digging through threads. Yours is in 👇\n{link}",
+    "Saved this on AGK Radar{rk}: the free hub with every System One integration, build and explainer from X, updated hourly.\n{link}",
   ],
   explainer: [
-    "Clear breakdown{nm}. We're putting every Jev explainer, demo and debate in one free place, updated hourly. Added yours:\n{link}",
-    "One of the better Jev explanations I've read. It's on Jev Radar now{rk}, the free hub for everything Jev on X:\n{link}",
+    "Clear breakdown{nm}. We're putting every System One explainer, demo and debate in one free place, updated hourly. Added yours:\n{link}",
+    "One of the better System One explanations I've read. It's on AGK Radar now{rk}, the free hub for everything System One on X:\n{link}",
   ],
   question: [
-    "Good question{nm}. The answers are scattered across X, so we pulled every Jev post, demo and explainer into one free, searchable hub (updated hourly):\n{home}",
-    "Most of what's known about Jev so far is collected here, free and searchable: builds, integrations, benchmarks, critiques. Might help:\n{home}",
+    "Good question{nm}. The answers are scattered across X, so we pulled every System One post, demo and explainer into one free, searchable hub (updated hourly):\n{home}",
+    "Most of what's known about System One so far is collected here, free and searchable: builds, integrations, benchmarks, critiques. Might help:\n{home}",
   ],
   critique: [
-    "Fair point{nm}, and worth reading next to the demos. Jev Radar keeps both sides in one free place, critiques included, updated hourly:\n{link}",
-    "Useful pushback. We track the whole Jev debate, not just the hype: every critique sits next to the builds on one free page.\n{link}",
+    "Fair point{nm}, and worth reading next to the demos. AGK Radar keeps both sides in one free place, critiques included, updated hourly:\n{link}",
+    "Useful pushback. We track the whole System One debate, not just the hype: every critique sits next to the builds on one free page.\n{link}",
   ],
   opinion: [
-    "If you want the full picture{nm}: we track every Jev post, build and take on X in one free hub, refreshed hourly. Yours is on it{rk}:\n{link}",
-    "Added your take to Jev Radar{rk}. Free, no signup: everything people build and say about Jev, in one place.\n{link}",
+    "If you want the full picture{nm}: we track every System One post, build and take on X in one free hub, refreshed hourly. Yours is on it{rk}:\n{link}",
+    "Added your take to AGK Radar{rk}. Free, no signup: everything people build and say about System One, in one place.\n{link}",
   ],
   news: [
-    "Adding this to the Jev Radar timeline{rk}. Free hub, every Jev update on X in one place, updated hourly:\n{link}",
-    "Logged. Jev Radar keeps every Jev announcement, build and debate in one free place:\n{link}",
+    "Adding this to the AGK Radar timeline{rk}. Free hub, every System One update on X in one place, updated hourly:\n{link}",
+    "Logged. AGK Radar keeps every System One announcement, build and debate in one free place:\n{link}",
   ],
   official: [
-    "Congrats on the launch. We built a free community hub that tracks everything people build and say about Jev, updated every hour. {count} posts so far:\n{home}",
-    "The community is moving fast on Jev. We're mapping all of it in one free place (builds, integrations, critiques), refreshed hourly:\n{home}",
+    "Congrats on the launch. We built a free community hub that tracks everything people build and say about System One, updated every hour. {count} posts so far:\n{home}",
+    "The community is moving fast on System One. We're mapping all of it in one free place (builds, integrations, critiques), refreshed hourly:\n{home}",
   ],
   meme: [
-    "Filed under Jev culture 😄 Everything about Jev on X, memes included, lives in one free hub:\n{link}",
+    "Filed under System One culture 😄 Everything about System One on X, memes included, lives in one free hub:\n{link}",
   ],
 };
 const FR = {
   build_demo: [
-    "Exactement le genre de build Jev qu'il faut montrer{nm}. Il est sur Jev Radar{rk} : le hub gratuit qui suit chaque build, démo et débat autour de Jev sur X, mis à jour chaque heure.\n\n{link}",
-    "Super démo{nm}. Ajoutée sur Jev Radar, l'endroit gratuit où tous les builds Jev sont rassemblés et expliqués simplement. La tienne est ici 👇\n{link}",
+    "Exactement le genre de build System One qu'il faut montrer{nm}. Il est sur AGK Radar{rk} : le hub gratuit qui suit chaque build, démo et débat autour de System One sur X, mis à jour chaque heure.\n\n{link}",
+    "Super démo{nm}. Ajoutée sur AGK Radar, l'endroit gratuit où tous les builds System One sont rassemblés et expliqués simplement. La tienne est ici 👇\n{link}",
   ],
-  integration: ["Belle intégration{nm}. On rassemble toutes les intégrations Jev au même endroit, gratuitement. La tienne y est 👇\n{link}"],
-  explainer: ["Explication très claire{nm}. On centralise tous les explainers, démos et débats sur Jev dans un hub gratuit, mis à jour chaque heure. Ajouté :\n{link}"],
+  integration: ["Belle intégration{nm}. On rassemble toutes les intégrations System One au même endroit, gratuitement. La tienne y est 👇\n{link}"],
+  explainer: ["Explication très claire{nm}. On centralise tous les explainers, démos et débats sur System One dans un hub gratuit, mis à jour chaque heure. Ajouté :\n{link}"],
   question: ["Bonne question{nm}. Les réponses sont éparpillées sur X, alors on a tout rassemblé au même endroit, gratuit et cherchable :\n{home}"],
-  critique: ["Point juste{nm}, à lire à côté des démos. Jev Radar garde les deux côtés du débat au même endroit, gratuitement :\n{link}"],
-  opinion: ["Pour avoir la vue complète{nm} : on suit chaque post, build et avis sur Jev dans un hub gratuit, mis à jour chaque heure :\n{link}"],
-  news: ["Ajouté à la chronologie Jev Radar{rk}. Tout Jev sur X au même endroit, gratuit :\n{link}"],
-  official: ["Bravo pour le lancement. On a monté un hub communautaire gratuit qui suit tout ce qui se construit et se dit sur Jev, chaque heure :\n{home}"],
-  meme: ["Classé dans la culture Jev 😄 Tout Jev sur X, memes compris, au même endroit :\n{link}"],
+  critique: ["Point juste{nm}, à lire à côté des démos. AGK Radar garde les deux côtés du débat au même endroit, gratuitement :\n{link}"],
+  opinion: ["Pour avoir la vue complète{nm} : on suit chaque post, build et avis sur System One dans un hub gratuit, mis à jour chaque heure :\n{link}"],
+  news: ["Ajouté à la chronologie AGK Radar{rk}. Tout System One sur X au même endroit, gratuit :\n{link}"],
+  official: ["Bravo pour le lancement. On a monté un hub communautaire gratuit qui suit tout ce qui se construit et se dit sur System One, chaque heure :\n{home}"],
+  meme: ["Classé dans la culture System One 😄 Tout System One sur X, memes compris, au même endroit :\n{link}"],
 };
 function firstName(p) {
   const n = String(p.a.n || "").replace(/[^\p{L}\p{N}\s'-]/gu, " ").trim().split(/\s+/)[0] || "";
@@ -233,7 +233,7 @@ $("#q").oninput = () => { shown = PAGE; render(); };
 $("#more").onclick = () => { shown += PAGE; render(); };
 $("#export").onclick = () => {
   const blob = new Blob([JSON.stringify({ state: STATE, drafts: DRAFTS }, null, 1)], { type: "application/json" });
-  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `jev-radar-reponses-${new Date().toISOString().slice(0, 10)}.json` });
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `agk-radar-replies-${new Date().toISOString().slice(0, 10)}.json` });
   a.click(); URL.revokeObjectURL(a.href);
 };
 $("#import").onchange = async e => {
@@ -247,7 +247,7 @@ $("#import").onchange = async e => {
 (async () => {
   const [posts, meta] = await Promise.all([fetch("/data/posts.json").then(r => r.json()), fetch("/data/meta.json").then(r => r.json()).catch(() => ({}))]);
   COUNT = meta.main || posts.length;
-  // Posts principaux sur Jev (classés par le radar), hors les nôtres et hors reposts.
+  // Posts principaux sur System One (classés par le radar), hors les nôtres et hors reposts.
   POSTS = posts.filter(p => p.rk && !p.r && p.a?.h?.toLowerCase() !== SELF && (p.j?.about_jev ?? 1) >= 0.5);
   render();
   syncReplies();
