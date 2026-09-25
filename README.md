@@ -51,6 +51,12 @@ Secrets (names only): `TYPESAFE_API_KEY` (AGK Intelligence provider), `ADMIN_TOK
 
 `worker/scripts/import.py` copied the Vercel-era data once, read-only: the raw state from this repository at commit `cccf7c4` and the published JSON from Vercel Blob `jev/`. Counts matched: 14,397 posts, 14,397 classified, 14,364 cache entries, 3,350 accounts, 1,973 transcripts, 10,159 published posts.
 
+## Limits
+
+- **Pass length.** A full pass rereads about 3,000 accounts with at most 6 fxtwitter requests in flight. It took 35 to 45 minutes on 2026-09-25, with the other radars crawling at the same time; a fast pass takes about 10 minutes. One pass runs at a time, and a cron that fires during a pass is skipped.
+- **`posts.json` holds every post** (14.6 MB for 11,886 posts). The build keeps them all in memory, so the file should be split by page if it grows past about 40 MB.
+- **Autopost is not ported.** The X credentials do not exist yet.
+
 ## Legacy (main branch)
 
 `pipeline/` (Python), `api/` and `vercel.json` are the previous implementation. They still serve `jev.agentik-os.com` from Vercel until the DNS move, updated by `.github/workflows/failover.yml` on GitHub Actions. The previous VPS schedule is gone and nothing here depends on it.
