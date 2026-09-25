@@ -46,11 +46,12 @@ export function withMeter<E extends { DB: D1Database }>(env: E, m: Meter): E {
 
 /** Per-pass totals, by stage (step name without its slice number). */
 export class PassMeter {
-  w = 0; r = 0; by: Record<string, number> = {};
+  w = 0; r = 0; by: Record<string, number> = {}; rby: Record<string, number> = {};
   add(name: string, w: number, r: number) {
     this.w += w; this.r += r;
     const stage = name.replace(/-\d+$/, "").replace(/^r\d+-/, "");
     this.by[stage] = (this.by[stage] || 0) + w;
+    this.rby[stage] = (this.rby[stage] || 0) + r;
   }
-  toJSON() { return { rows_written: this.w, rows_read: this.r, written_by_stage: this.by }; }
+  toJSON() { return { rows_written: this.w, rows_read: this.r, written_by_stage: this.by, read_by_stage: this.rby }; }
 }

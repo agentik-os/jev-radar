@@ -9,6 +9,7 @@ import { MAX_ROUNDS, NEW_BUDGET, Pair, crawlFinish, crawlInit, fetchLinked, plan
 import { classifySlice, evalIdeas, rekey, unclassified } from "./classify";
 import { LONG_VIDEO, pendingVideos, transcribeSlice } from "./transcribe";
 import { buildAndPublish } from "./build";
+import { FxStats, addFx, fxStats } from "./fx";
 import { PassMeter, withMeter } from "./meter";
 
 const STEP = { retries: { limit: 3, delay: "15 seconds" as const, backoff: "exponential" as const }, timeout: "20 minutes" as const };
@@ -46,10 +47,14 @@ export class RadarPass extends WorkflowEntrypoint<Env, PassParams> {
       const init = await S("crawl-init", STEP, e => crawlInit(e, now));
       let pending: Pair[] = init.pending;
       let budget = NEW_BUDGET[mode];
-      let added = 0, linked = 0, accountsRead = 0, failedAccounts = 0, planned = 0, cursor: string | null = null;
+      let added = 0, linked = 0, accountsRead = 0, failedAccounts = 0, planned = 0, pages = 0, cursor: string | null = null;
+      const newAuthors = new Set<string>();
+      const fx: FxStats = fxStats();
       for (let rnd = 1; rnd <= MAX_ROUNDS[mode] + 1; rnd++) {
         const l = await S(`r${rnd}-linked`, STEP, e => fetchLinked(e, pending));
         added += l.added; linked += l.fetched;
+        for (const a of l.authors || []) newAuthors.add(a);
+        if (l.fx) addFx(fx, l.fx);
         const plan = await S(`r${rnd}-plan`, STEP, e => planRound(e, mode, rnd, budget, now));
         budget = plan.budget;
         pending = [];
@@ -61,30 +66,37 @@ export class RadarPass extends WorkflowEntrypoint<Env, PassParams> {
           const r = await S(fastRound ? `r1-fast-read-${i}` : `r${rnd}-timelines-${i}`, STEP, e => readTimelines(e, mode, slices[i], now));
           added += r.added; failedAccounts += r.failed; accountsRead += slices[i].length; read += slices[i].length;
           pending.push(...r.pending);
+          for (const a of r.authors || []) newAuthors.add(a);
+          if (r.fx) addFx(fx, r.fx);
+          pages += r.pages || 0;
           // the time is taken inside the step, so a replay makes the same decision
           if (fastRound && r.t - now * 1000 > FAST_READ_MS) break;
         }
         if (fastRound) {
           planned = plan.jobs.length;
-          const last = plan.rest !== undefined && read > plan.rest ? plan.jobs[read - 1][0] : null;
+          // the cursor moves past the last rotation account read (plan.rot marks them; plans made before it used plan.rest)
+          const lastRot = plan.rot ? plan.rot.lastIndexOf("1", read - 1) : (plan.rest !== undefined && read > plan.rest ? read - 1 : -1);
+          const last = lastRot >= 0 ? plan.jobs[lastRot][0] : null;
           cursor = (await S("fast-cursor", STEP, e => saveFastCursor(e, last))).cursor;
         }
       }
       if (mode === "full") stats.refresh = await S("refresh-top", STEP, e => refreshTop(e, now));
-      stats.crawl = await S("crawl-finish", STEP, async e => ({ ...(await crawlFinish(e, mode, added, now)), linked, accountsRead, failedAccounts,
-        ...(mode === "fast" ? { planned, cursor } : {}) }));
+      stats.crawl = await S("crawl-finish", STEP, async e => ({ ...(await crawlFinish(e, mode, added, now, [...newAuthors])), linked, accountsRead, failedAccounts,
+        pages, fx, ...(mode === "fast" ? { planned, cursor } : {}) }));
 
       // ---- transcription (Workers AI Whisper): short videos in every pass, long ones (first 30 minutes) in the full pass
       const touched: string[] = [];
-      const tStats = { videos: 0, ok: 0, no_audio: 0, no_speech: 0, failed: 0, retry: 0 };
+      const tStats = { videos: 0, ok: 0, no_audio: 0, no_speech: 0, failed: 0, retry: 0, deferred: 0 };
       const vids = await S("videos-pending", STEP, e => pendingVideos(e, MAX_VIDEOS[mode], LONG_VIDEO));
       const long = mode === "full" ? await S("videos-pending-long", STEP, async e => (await pendingVideos(e, 200)).filter(v => v.duration > LONG_VIDEO).slice(0, MAX_LONG_VIDEOS)) : [];
       const vslices = [...chunks(vids, VIDEO_SLICE), ...long.map(v => [v])];
       for (let i = 0; i < vslices.length; i++) {
         const r = await S(`transcribe-${i}`, STEP, e => transcribeSlice(e, vslices[i]));
         touched.push(...r.posts);
-        for (const k of ["ok", "no_audio", "no_speech", "failed", "retry"] as const) tStats[k] += r[k];
+        for (const k of ["ok", "no_audio", "no_speech", "failed", "retry", "deferred"] as const) tStats[k] += (r as any)[k] || 0;
         tStats.videos += vslices[i].length;
+        // the invocation's subrequest budget ran out: the rest waits for the next pass, no attempt is counted
+        if ((r as any).deferred) break;
       }
       stats.transcribe = tStats;
 

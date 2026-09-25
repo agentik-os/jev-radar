@@ -15,9 +15,19 @@ const PUBLIC_DATA = new Set([...DATA_FILES]);
 
 const json = (d: unknown, status = 200) => new Response(JSON.stringify(d, null, 1), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
-/** A full pass is owed when none has started for FULL_OWED_AFTER seconds (a lost or failed cron firing); the next fast
- *  firing then starts it next to the fast pass. */
-export const FULL_OWED_AFTER = 65 * 60;
+/** A full pass is owed when none is running and none has started for FULL_OWED_AFTER seconds: its hourly firing was
+ *  covered by a full pass that ran past the hour, or was lost. The next fast firing then starts it next to the fast pass,
+ *  so full passes start about every hour (never more than one fast interval after the previous one ends). */
+export const FULL_OWED_AFTER = 58 * 60;
+
+/** A full firing within FULL_RECENT of the last full start is skipped and logged: an owed full pass started shortly
+ *  before :07 (it followed one that ran past the hour) already covers this hour. */
+export const FULL_RECENT = 40 * 60;
+async function recentFull(env: Env, t: number): Promise<string | null> {
+  const last = await env.DB.prepare("SELECT id, started FROM runs WHERE mode = 'full' AND status != 'skipped' AND started > ? ORDER BY started DESC LIMIT 1")
+    .bind(t - FULL_RECENT).first<{ id: string; started: number }>();
+  return last ? `recent full pass ${last.id} started ${Math.round((t - last.started) / 60)} min ago` : null;
+}
 
 async function fullOwed(env: Env, t: number): Promise<string | null> {
   // a full pass still running is not owed again
@@ -123,7 +133,8 @@ async function admin(env: Env, req: Request, url: URL): Promise<Response> {
     const pv: PendingVideo = { video_id: row.video_id, post_id: row.post_id, url: row.url, duration: row.duration, attempts: row.attempts, hls: hlsUrl(vid) };
     const t0 = Date.now();
     let o: Outcome | { transient: string };
-    try { o = await transcribeOne(env, pv); } catch (e: any) { o = { transient: String(e?.message || e) }; }
+    const debug = url.searchParams.get("debug") === "1";
+    try { o = await transcribeOne(env, pv, debug); } catch (e: any) { o = { transient: String(e?.message || e) }; }
     const ms = Date.now() - t0;
     const stored = url.searchParams.get("store") === "1" ? await record(env, pv, o) : null;
     const after = await db.prepare("SELECT t.status, length(t.text) AS chars, t.created_at, v.attempts FROM videos v LEFT JOIN transcripts t ON t.video_id = v.video_id WHERE v.video_id = ?").bind(arg).first();
@@ -131,7 +142,7 @@ async function admin(env: Env, req: Request, url: URL): Promise<Response> {
     return json({ video_id: row.video_id, post_id: row.post_id, duration: row.duration, hls: !!pv.hls,
       before: { status: row.old_status, text: row.old_text === null ? null : String(row.old_text).slice(0, 80), created_at: row.old_at, attempts: row.attempts },
       outcome: "transient" in o ? o : { status: o.status, detail: o.detail, source: o.source, audio_seconds: o.seconds, chunks: o.chunks, words: text.split(" ").filter(Boolean).length,
-        head: text.slice(0, 240), tail: text.slice(-160) }, ms, stored, after });
+        head: text.slice(0, 240), tail: text.slice(-160), ...(debug ? { segments: o.segments } : {}) }, ms, stored, after });
   }
   if (what === "import" && req.method === "POST") return importRows(env, arg, await req.json());
   if (what === "r2" && req.method === "PUT" && arg && (PUBLIC_DATA.has(arg) || arg === "ranks.json")) {
@@ -209,6 +220,14 @@ export default {
 
   async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext) {
     const mode = CRONS[event.cron] ?? "fast";
+    const recent = mode === "full" ? await recentFull(env, nowS()) : null;
+    if (recent) {
+      const t = nowS();
+      await env.DB.prepare("INSERT OR IGNORE INTO runs(id, mode, trigger, started, finished, status, error) VALUES (?,?,?,?,?, 'skipped', ?)")
+        .bind(passId(mode, t, "-skip"), mode, event.cron, t, t, recent).run();
+      console.log(JSON.stringify({ cron: event.cron, mode, skipped: recent }));
+      return;
+    }
     const r: Record<string, unknown> = await startPass(env, mode, event.cron);
     if (mode === "fast") { const owed = await fullOwed(env, nowS()); if (owed) r.full = await startPass(env, "full", `${event.cron} (full owed: ${owed})`); }
     console.log(JSON.stringify({ cron: event.cron, mode, ...r }));

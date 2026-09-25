@@ -7,6 +7,9 @@ preview_urls = false
 
 [limits]
 cpu_ms = 300000
+# one pass runs in one Workflow instance: a full pass makes well over the default 10,000 subrequests (timelines, video
+# segments, AGK Intelligence calls), so the cap is raised; it stays a guard against a runaway loop
+subrequests = 200000
 
 [vars]
 SITE_URL = "https://agk-radar.x-18a.workers.dev"   # switches to https://radar.agentik-os.com after the zone move

@@ -1,7 +1,7 @@
 // Incremental crawl of the tracked X posts, ported from pipeline/crawl.py and pipeline/replies.py.
 // State lives in D1; each function below is one Workflow step and is safe to retry (upserts only).
 import { Env, Mode, chunks, now as nowS, pool } from "./env";
-import { getJson } from "./fx";
+import { FxStats, addFx, fxStats, getJson } from "./fx";
 import { LAUNCH, Raw, isTracked, links, smallMp4 } from "./radar";
 import SEEDS from "./config/seeds.json";
 
@@ -16,7 +16,8 @@ const REFRESH_EVERY = 6 * 3600;
 export const NEW_BUDGET: Record<Mode, number> = { full: 400, fast: 60 };
 export const MAX_ROUNDS: Record<Mode, number> = { full: 8, fast: 3 };
 const FAST_ACTIVE_DAYS = 4;
-const FAST_HOT_MAX = 160; // leaves part of the 2.5-minute read to the rotation (about 240 accounts are read per fast pass while a full pass also crawls)
+const FAST_HOT_MAX = 160;
+const FAST_HOT_PER_REST = 2; // the read order gives the rotation one account in three, so it moves on every fast pass however slow fxtwitter is
 const FAST_ALWAYS = new Set(["typesafeai", "completeskeptic", "openrouter", "vercel"]);
 const SELF = "Agentik_os";
 
@@ -57,10 +58,25 @@ async function keepArticleBodies(db: D1Database, posts: Raw[]): Promise<number> 
   return kept;
 }
 
+/** fxtwitter's status endpoints return a long post (an X "note") cut to its first ~280 characters, while timelines return
+ *  the whole text. A cut copy (refresh of the most viewed posts, linked statuses) must never replace a stored full text:
+ *  the text feeds the classification key, so the post would flip between two keys, and two sets of answers, depending on
+ *  which endpoint read it last. Mutates `t`; returns how many texts were kept. */
+export function keepFullText(t: Raw, old: Raw): number {
+  const cut = (a: any, b: any) => !!a && !!b && typeof a.text === "string" && typeof b.text === "string" && a.text.length > 0
+    && b.text.length > a.text.length && b.text.startsWith(a.text.replace(/[\s\u2026]+$/, ""));
+  let n = 0;
+  if (cut(t, old)) { t.text = old.text; t.raw_text = old.raw_text; if (old.is_note_tweet) t.is_note_tweet = true; n++; }
+  if (t.quote && old.quote && String(t.quote.id) === String(old.quote.id) && cut(t.quote, old.quote)) {
+    t.quote.text = old.quote.text; t.quote.raw_text = old.quote.raw_text; n++;
+  }
+  return n;
+}
+
 /** Writes the posts that are new or changed, and nothing else: a post read again with the same content and metrics
  *  costs no D1 write. Indexed columns (author, created) are written only when they change, since every index entry a
  *  write touches is billed as one more row. Returns how many were new. Also records their videos for transcription. */
-export async function upsertPosts(db: D1Database, posts: Raw[]): Promise<number> {
+export async function upsertPosts(db: D1Database, posts: Raw[], newAuthors?: Set<string>): Promise<number> {
   if (!posts.length) return 0;
   const byId = new Map<string, Raw>();
   for (const t of posts) byId.set(String(t.id), t); // the last copy read wins, as with sequential upserts
@@ -74,11 +90,14 @@ export async function upsertPosts(db: D1Database, posts: Raw[]): Promise<number>
   const stmts: D1PreparedStatement[] = [];
   let added = 0;
   for (const [id, t] of byId) {
-    const raw = JSON.stringify(t), old = stored.get(id);
+    const old = stored.get(id);
+    let raw = JSON.stringify(t);
     if (old && old.raw === raw) continue;
+    if (old && keepFullText(t, JSON.parse(old.raw))) { raw = JSON.stringify(t); if (old.raw === raw) continue; }
     const author = (((t.author || {}).screen_name) || "").toLowerCase(), created = t.created_timestamp || 0, views = t.views || 0;
     if (!old) {
       added++;
+      if (author) newAuthors?.add(author);
       stmts.push(db.prepare(`INSERT INTO posts(id, author, created, views, raw, updated_at) VALUES (?,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET views = excluded.views, raw = excluded.raw, updated_at = excluded.updated_at WHERE posts.raw IS NOT excluded.raw`)
         .bind(id, author, created, views, raw, ts));
@@ -115,7 +134,8 @@ export async function crawlInit(env: Env, now: number): Promise<{ pending: Pair[
   const db = env.DB;
   const seedHandles = (SEEDS as string[]).map(l => { const m = STATUS_RE.exec(l); return m ? m[1] : l.replace(/^@/, ""); });
   await addAccounts(db, seedHandles);
-  await db.prepare("INSERT OR IGNORE INTO accounts(k, handle) SELECT DISTINCT author, json_extract(raw, '$.author.screen_name') FROM posts WHERE author != ''").run();
+  // authors of recent posts (older authors are already accounts; reading every post here cost 17,000 rows a pass)
+  await db.prepare("INSERT OR IGNORE INTO accounts(k, handle) SELECT DISTINCT author, json_extract(raw, '$.author.screen_name') FROM posts WHERE created >= ? AND author != ''").bind(now - OVERLAP).run();
   const recent = await db.prepare("SELECT raw FROM posts WHERE created >= ?").bind(now - OVERLAP).all<{ raw: string }>();
   const pend = new Map<string, Pair>();
   for (const row of recent.results) for (const p of links(JSON.parse(row.raw), row.raw).ids) pend.set(p[1], p);
@@ -123,21 +143,23 @@ export async function crawlInit(env: Env, now: number): Promise<{ pending: Pair[
 }
 
 /** Step: fetch linked statuses that are neither known nor already seen; keep the tracked ones. */
-export async function fetchLinked(env: Env, pending: Pair[]): Promise<{ fetched: number; added: number }> {
+export async function fetchLinked(env: Env, pending: Pair[]): Promise<{ fetched: number; added: number; authors: string[]; fx: FxStats }> {
   const db = env.DB;
   const todo = await filterUnseen(db, pending);
-  if (!todo.length) return { fetched: 0, added: 0 };
+  const fx = fxStats();
+  if (!todo.length) return { fetched: 0, added: 0, authors: [], fx };
   const ts = nowS();
   await batchRun(db, todo.map(p => db.prepare("INSERT OR IGNORE INTO seen_ids(id, ts) VALUES (?, ?)").bind(p[1], ts)));
-  const got = await pool(todo, FX_PARALLEL, async ([h, i]) => (await getJson(`https://api.fxtwitter.com/${h || "i"}/status/${i}`))?.tweet);
+  const got = await pool(todo, FX_PARALLEL, async ([h, i]) => (await getJson(`https://api.fxtwitter.com/${h || "i"}/status/${i}`, fx))?.tweet);
   const keep = got.filter(t => t && t.id && isTracked(t));
-  const added = await upsertPosts(db, keep);
+  const authors = new Set<string>();
+  const added = await upsertPosts(db, keep, authors);
   await addAccounts(db, keep.map(t => (t.author || {}).screen_name || ""));
-  return { fetched: todo.length, added };
+  return { fetched: todo.length, added, authors: [...authors], fx };
 }
 
 /** Step: decide which accounts to read in this round (crawl.py main loop). */
-export async function planRound(env: Env, mode: Mode, rnd: number, budget: number, now: number): Promise<{ jobs: Job[]; budget: number; rest?: number }> {
+export async function planRound(env: Env, mode: Mode, rnd: number, budget: number, now: number): Promise<{ jobs: Job[]; budget: number; rest?: number; rot?: string }> {
   const db = env.DB;
   const jobs: Job[] = [];
   const fresh = await db.prepare("SELECT handle FROM accounts WHERE last_checked = 0 ORDER BY rowid LIMIT ?").bind(Math.max(budget, 0)).all<{ handle: string }>();
@@ -145,9 +167,11 @@ export async function planRound(env: Env, mode: Mode, rnd: number, budget: numbe
   budget -= fresh.results.length;
   if (rnd === 1) {
     if (mode === "fast") {
-      // Priority order: the always-read accounts, then the FAST_HOT_MAX most recently active ones, then the other active
-      // accounts from the rotation cursor. The pass reads this list for a fixed time (workflow FAST_READ_MS) and moves
-      // the cursor, so every active account is read by some fast pass in turn and a fast pass stays a few minutes long.
+      // Read order: the always-read accounts, then the FAST_HOT_MAX most recently active ones interleaved with the other
+      // active accounts from the rotation cursor (FAST_HOT_PER_REST hot accounts, then one from the rotation). The pass
+      // reads this list for a fixed time (workflow FAST_READ_MS) and moves the cursor past the last rotation account it
+      // read, so the rotation advances on every fast pass, even when a full pass slows fxtwitter down, and every active
+      // account is read by some fast pass in turn. `rot` marks the rotation accounts in the job list ("1").
       const r = await db.prepare(`SELECT a.k, a.handle, (SELECT MAX(p.created) FROM posts p WHERE p.author = a.k AND p.created > ?) AS last
         FROM accounts a WHERE a.last_checked > 0`).bind(now - FAST_ACTIVE_DAYS * 86400).all<{ k: string; handle: string; last: number | null }>();
       const cursor = (await db.prepare("SELECT v FROM kv WHERE k = 'fast_cursor'").first<{ v: string }>())?.v || "";
@@ -157,10 +181,10 @@ export async function planRound(env: Env, mode: Mode, rnd: number, budget: numbe
       const rest = active.slice(FAST_HOT_MAX).sort((a, b) => (a.k < b.k ? -1 : a.k > b.k ? 1 : 0));
       const at = rest.findIndex(a => a.k > cursor);
       const rotated = at <= 0 ? rest : [...rest.slice(at), ...rest.slice(0, at)];
-      for (const a of [...always, ...hot]) jobs.push([a.handle, now - OVERLAP, 1]);
-      const restFrom = jobs.length;
-      for (const a of rotated) jobs.push([a.handle, now - OVERLAP, 1]);
-      return { jobs, budget, rest: restFrom };
+      const order = interleave(hot, rotated, FAST_HOT_PER_REST);
+      const rot = "0".repeat(jobs.length + always.length) + order.map(x => (x.rot ? "1" : "0")).join("");
+      for (const a of [...always, ...order.map(x => x.a)]) jobs.push([a.handle, now - OVERLAP, 1]);
+      return { jobs, budget, rest: jobs.length - rotated.length, rot };
     } else {
       const r = await db.prepare("SELECT handle, last_checked FROM accounts WHERE last_checked > 0 AND (posts > 0 OR ? - last_checked > ?)")
         .bind(now, IDLE_RECHECK).all<{ handle: string; last_checked: number }>();
@@ -170,26 +194,39 @@ export async function planRound(env: Env, mode: Mode, rnd: number, budget: numbe
   return { jobs, budget };
 }
 
-async function timeline([handle, since, maxPages]: Job): Promise<{ handle: string; found: Raw[]; ok: boolean }> {
+/** `per` items of `a`, then one of `b`, and so on; the rest of either list at the end. */
+export function interleave<T>(a: T[], b: T[], per: number): { a: T; rot: boolean }[] {
+  const out: { a: T; rot: boolean }[] = [];
+  let i = 0, j = 0;
+  while (i < a.length || j < b.length) {
+    for (let k = 0; k < per && i < a.length; k++) out.push({ a: a[i++], rot: false });
+    if (j < b.length) out.push({ a: b[j++], rot: true });
+  }
+  return out;
+}
+
+async function timeline([handle, since, maxPages]: Job, fx?: FxStats): Promise<{ handle: string; found: Raw[]; ok: boolean; pages: number }> {
   const base = `https://api.fxtwitter.com/2/profile/${handle}/statuses`;
-  let cursor: string | null = null, ok = false;
+  let cursor: string | null = null, ok = false, pages = 0;
   const found: Raw[] = [];
   for (let page = 0; page < maxPages; page++) {
-    const d = await getJson(base + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""));
+    const d = await getJson(base + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""), fx);
     if (!d || !d.results || !d.results.length) break;
-    ok = true;
+    ok = true; pages++;
     for (const t of d.results) if (isTracked(t)) found.push(t);
     cursor = (d.cursor || {}).bottom || null;
     // the first result can be an old pinned post
     if (!cursor || d.results.slice(1).every((t: Raw) => (t.created_timestamp || 0) < since)) break;
   }
-  return { handle, found, ok };
+  return { handle, found, ok, pages };
 }
 
 /** Step: read a slice of the round's timelines. Returns the statuses they link to (next round). */
-export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: number): Promise<{ added: number; pending: Pair[]; failed: number; t: number }> {
+export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: number):
+    Promise<{ added: number; pending: Pair[]; failed: number; t: number; authors: string[]; pages: number; fx: FxStats }> {
   const db = env.DB;
-  const res = await pool(jobs, FX_PARALLEL, timeline);
+  const fx = fxStats();
+  const res = await pool(jobs, FX_PARALLEL, j => timeline(j, fx));
   const found: Raw[] = [];
   const handles: string[] = [];
   const pend = new Map<string, Pair>();
@@ -211,9 +248,10 @@ export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: numb
     }
   }
   await batchRun(db, stmts);
-  const added = await upsertPosts(db, found);
+  const authors = new Set<string>();
+  const added = await upsertPosts(db, found, authors);
   await addAccounts(db, handles);
-  return { added, pending: [...pend.values()].slice(0, 15000), failed, t: Date.now() };
+  return { added, pending: [...pend.values()].slice(0, 15000), failed, t: Date.now(), authors: [...authors], pages: res.reduce((a, r) => a + r.pages, 0), fx };
 }
 
 /** Step (full pass, every 6 h): refresh the metrics of the most viewed posts. */
@@ -222,6 +260,7 @@ export async function refreshTop(env: Env, now: number): Promise<{ refreshed: nu
   const last = Number((await db.prepare("SELECT v FROM kv WHERE k = 'last_refresh'").first<{ v: string }>())?.v || 0);
   if (now - last <= REFRESH_EVERY) return null;
   const top = await db.prepare("SELECT id, json_extract(raw, '$.author.screen_name') AS h FROM posts ORDER BY views DESC LIMIT ?").bind(REFRESH_TOP).all<{ id: string; h: string }>();
+  // status copies: upsertPosts keeps the stored full text of long posts (keepFullText), so only metrics move
   const got = await pool(top.results, FX_PARALLEL, async r => (await getJson(`https://api.fxtwitter.com/${r.h || "i"}/status/${r.id}`))?.tweet);
   const ok = got.filter(t => t && t.id && isTracked(t));
   // only replace posts we already track (same rule as crawl.py)
@@ -237,18 +276,41 @@ export async function saveFastCursor(env: Env, handle: string | null) {
   return { cursor: handle };
 }
 
+/** Recounts tracked posts per account and writes only the counts that changed. A full pass recounts every account with
+ *  one grouped read of the author index; a fast pass only the authors of the posts it added (`authors`), since posts are
+ *  never removed from AGK Radar. (The old statement recounted every account twice on every pass: about 40,000 rows read.) */
+export async function recountPosts(db: D1Database, authors: string[] | null): Promise<number> {
+  const counts = new Map<string, number>();
+  const stored = new Map<string, number>();
+  if (authors === null) {
+    for (const r of (await db.prepare("SELECT author, COUNT(*) AS n FROM posts WHERE author != '' GROUP BY author").all<{ author: string; n: number }>()).results) counts.set(r.author, r.n);
+    for (const r of (await db.prepare("SELECT k, posts FROM accounts").all<{ k: string; posts: number }>()).results) stored.set(r.k, r.posts);
+  } else {
+    for (const c of chunks([...new Set(authors)].filter(Boolean), 90)) {
+      const q = c.map(() => "?").join(",");
+      for (const r of (await db.prepare(`SELECT author, COUNT(*) AS n FROM posts WHERE author IN (${q}) GROUP BY author`).bind(...c).all<{ author: string; n: number }>()).results) counts.set(r.author, r.n);
+      for (const r of (await db.prepare(`SELECT k, posts FROM accounts WHERE k IN (${q})`).bind(...c).all<{ k: string; posts: number }>()).results) stored.set(r.k, r.posts);
+    }
+  }
+  const stmts: D1PreparedStatement[] = [];
+  for (const [k, n] of stored) if ((counts.get(k) || 0) !== n) stmts.push(db.prepare("UPDATE accounts SET posts = ? WHERE k = ?").bind(counts.get(k) || 0, k));
+  await batchRun(db, stmts);
+  return stmts.length;
+}
+
 /** Step: recount tracked posts per account, trim the seen list, record crawl totals. */
-export async function crawlFinish(env: Env, mode: Mode, added: number, now: number) {
+export async function crawlFinish(env: Env, mode: Mode, added: number, now: number, authors: string[] = []) {
   const db = env.DB;
+  const recounted = await recountPosts(db, mode === "full" ? null : authors);
   await db.batch([
-    // recount tracked posts, writing only the accounts whose count changed
-    db.prepare("UPDATE accounts SET posts = (SELECT COUNT(*) FROM posts p WHERE p.author = accounts.k) WHERE posts != (SELECT COUNT(*) FROM posts p WHERE p.author = accounts.k)"),
     db.prepare("DELETE FROM seen_ids WHERE id NOT IN (SELECT id FROM seen_ids ORDER BY id DESC LIMIT 20000)"),
     db.prepare("INSERT OR REPLACE INTO kv(k, v) VALUES (?, ?)").bind(mode === "fast" ? "last_fast" : "last_run", String(now)),
     db.prepare("INSERT OR REPLACE INTO kv(k, v) VALUES ('last_crawl_new', ?)").bind(String(added)),
   ]);
+  // table sizes are counted by full passes only (each count reads every row)
+  if (mode !== "full") return { added, recounted };
   const c = await db.prepare("SELECT (SELECT COUNT(*) FROM posts) AS posts, (SELECT COUNT(*) FROM accounts) AS accounts").first<{ posts: number; accounts: number }>();
-  return { posts: c?.posts || 0, accounts: c?.accounts || 0, added };
+  return { posts: c?.posts || 0, accounts: c?.accounts || 0, added, recounted };
 }
 
 /** Step: replies and quotes published by @Agentik_os on tracked posts (validates the private /post page). */
