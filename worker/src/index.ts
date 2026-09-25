@@ -15,14 +15,14 @@ const PUBLIC_DATA = new Set([...DATA_FILES]);
 
 const json = (d: unknown, status = 200) => new Response(JSON.stringify(d, null, 1), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
-/** A full pass is owed when its cron firing was skipped (a "skipped" full row newer than the last started full pass)
+/** A full pass is owed when its cron firing was skipped by a running fast pass (a "skipped" full row newer than the last started full pass)
  *  or when no full pass has started for FULL_OWED_AFTER seconds. The next idle fast firing then runs the full pass. */
 export const FULL_OWED_AFTER = 65 * 60;
 
 async function fullOwed(env: Env, t: number): Promise<string | null> {
   const row = await env.DB.prepare(`SELECT
       (SELECT MAX(started) FROM runs WHERE mode = 'full' AND status != 'skipped') AS last_full,
-      (SELECT MAX(started) FROM runs WHERE mode = 'full' AND status = 'skipped') AS last_skip`).first<{ last_full: number | null; last_skip: number | null }>();
+      (SELECT MAX(started) FROM runs WHERE mode = 'full' AND status = 'skipped' AND error NOT LIKE 'covered by%') AS last_skip`).first<{ last_full: number | null; last_skip: number | null }>();
   const lastFull = row?.last_full ?? 0, lastSkip = row?.last_skip ?? 0;
   if (lastSkip > lastFull) return `full firing skipped at ${new Date(lastSkip * 1000).toISOString().slice(11, 16)} UTC`;
   if (t - lastFull >= FULL_OWED_AFTER) return `no full pass for ${Math.round((t - lastFull) / 60)} min`;
@@ -36,13 +36,14 @@ const passId = (mode: string, t: number, suffix = "") => `${mode}-${new Date(t *
 export async function startPass(env: Env, mode: Mode, trigger: string): Promise<{ id?: string; mode?: Mode; skipped?: string }> {
   const t = nowS();
   // one pass at a time: the Workflow status of every pass still marked running is authoritative
-  const open = (await env.DB.prepare("SELECT id FROM runs WHERE status = 'running' AND mode IN ('full', 'fast') AND started > ? ORDER BY started DESC")
-    .bind(t - 24 * 3600).all<{ id: string }>()).results;
+  const open = (await env.DB.prepare("SELECT id, mode FROM runs WHERE status = 'running' AND mode IN ('full', 'fast') AND started > ? ORDER BY started DESC")
+    .bind(t - 24 * 3600).all<{ id: string; mode: string }>()).results;
   for (const busy of open) {
     const inst = await env.RADAR_PASS.get(busy.id).catch(() => null);
     const st = inst ? (await inst.status().catch(() => ({ status: "unknown" }))).status : "unknown";
     if (["queued", "running", "waiting", "paused", "waitingForPause"].includes(st)) {
-      const reason = `pass ${busy.id} is ${st}`;
+      // a firing skipped while a full pass runs is covered by that pass; one skipped by a fast pass makes the full pass owed
+      const reason = busy.mode === "full" ? `covered by full pass ${busy.id} (${st})` : `pass ${busy.id} is ${st}`;
       if (trigger !== "manual") await env.DB.prepare("INSERT OR IGNORE INTO runs(id, mode, trigger, started, finished, status, error) VALUES (?,?,?,?,?, 'skipped', ?)")
         .bind(passId(mode, t, "-skip"), mode, trigger, t, t, reason).run();
       return { skipped: reason };
