@@ -20,7 +20,10 @@ const json = (d: unknown, status = 200) => new Response(JSON.stringify(d, null, 
 export const FULL_OWED_AFTER = 65 * 60;
 
 async function fullOwed(env: Env, t: number): Promise<string | null> {
-  const row = await env.DB.prepare("SELECT MAX(started) AS last_full FROM runs WHERE mode = 'full' AND status != 'skipped'").first<{ last_full: number | null }>();
+  // a full pass still running is not owed again
+  const row = await env.DB.prepare("SELECT MAX(started) AS last_full, SUM(status = 'running') AS running FROM runs WHERE mode = 'full' AND status != 'skipped' AND started > ?")
+    .bind(t - 24 * 3600).first<{ last_full: number | null; running: number | null }>();
+  if (row?.running) return null;
   const lastFull = row?.last_full ?? 0;
   return t - lastFull >= FULL_OWED_AFTER ? `no full pass for ${Math.round((t - lastFull) / 60)} min` : null;
 }

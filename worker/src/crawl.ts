@@ -16,7 +16,7 @@ const REFRESH_EVERY = 6 * 3600;
 export const NEW_BUDGET: Record<Mode, number> = { full: 400, fast: 60 };
 export const MAX_ROUNDS: Record<Mode, number> = { full: 8, fast: 3 };
 const FAST_ACTIVE_DAYS = 4;
-const FAST_HOT_MAX = 240;
+const FAST_HOT_MAX = 160; // leaves part of the 2.5-minute read to the rotation (about 240 accounts are read per fast pass while a full pass also crawls)
 const FAST_ALWAYS = new Set(["typesafeai", "completeskeptic", "openrouter", "vercel"]);
 const SELF = "Agentik_os";
 
