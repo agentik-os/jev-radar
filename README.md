@@ -53,8 +53,9 @@ Secrets (names only): `TYPESAFE_API_KEY` (AGK Intelligence provider), `ADMIN_TOK
 
 ## Limits
 
-- **Pass length.** A full pass rereads about 3,000 accounts with at most 6 fxtwitter requests in flight. It took 35 to 45 minutes on 2026-09-25, with the other radars crawling at the same time; a fast pass takes about 10 minutes. One pass runs at a time, and a cron that fires during a pass is skipped.
+- **Pass length.** A full pass rereads about 3,000 accounts with at most 6 fxtwitter requests in flight. It took 35 to 45 minutes on 2026-09-25, with the other radars crawling at the same time; a fast pass takes about 10 minutes. One pass runs at a time. A cron that fires during a pass is skipped and written to the run log (`status = 'skipped'`); a skipped full pass is owed and runs at the next idle fast firing (at :22, :37 or :52), as does a full pass when none has started for 65 minutes. In practice the site publishes about twice an hour.
 - **`posts.json` holds every post** (14.6 MB for 11,886 posts). The build keeps them all in memory, so the file should be split by page if it grows past about 40 MB.
+- **X articles.** A timeline copy of an X long-form article carries the title but not the body. A recrawl never replaces a stored body with an empty one (`keepArticleBodies` in `worker/src/crawl.ts`), because the body feeds the classification. Articles first seen on a timeline have no body; the linked-status fetch returns one.
 - **Autopost is not ported.** The X credentials do not exist yet.
 
 ## Legacy (main branch)

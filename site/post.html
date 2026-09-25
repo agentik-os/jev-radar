@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Réponses X · AGK Radar</title>
+<title>X replies · AGK Radar</title>
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#09090b">
@@ -18,40 +18,40 @@
 <header class="top">
   <div class="top-in">
     <a class="brand" href="/" aria-label="AGK Radar"><span class="radar"><i></i><i></i><b></b></span><span>AGK <em>Radar</em></span></a>
-    <span class="rp-tag">/post · privé</span>
+    <span class="rp-tag">/post · private</span>
     <div class="top-actions" style="margin-left:auto">
-      <button class="icon-btn" id="theme" aria-label="Thème"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9c0-.5 0-.9-.1-1.4A5.5 5.5 0 0 1 13.4 3.1 9 9 0 0 0 12 3Z"/></svg></button>
+      <button class="icon-btn" id="theme" aria-label="Theme"><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9c0-.5 0-.9-.1-1.4A5.5 5.5 0 0 1 13.4 3.1 9 9 0 0 0 12 3Z"/></svg></button>
     </div>
   </div>
 </header>
 
 <main class="wrap rp">
   <section class="rp-head">
-    <h1>Répondre à <em>chaque</em> post sur System One</h1>
-    <p class="lead">Un brouillon de réponse par post. Tu l'ajustes, « Répondre sur X » ouvre la réponse pré-remplie sous le post, tu publies toi-même, puis tu valides avec « ✓ Posté ». Les nouveaux posts arrivent ici à chaque passage du radar (toutes les heures).</p>
+    <h1>Reply to <em>every</em> post about System One</h1>
+    <p class="lead">One draft reply per post. Adjust it, press “Reply on X” to open the pre-filled reply under the post, publish it yourself, then confirm with “✓ Posted”. New posts arrive here after each radar pass (every hour).</p>
     <div class="rp-stats" id="stats"></div>
   </section>
 
   <section class="rp-bar">
     <div class="seg" id="status">
-      <button data-v="todo" class="on">À faire</button><button data-v="done">Postés</button><button data-v="skip">Ignorés</button><button data-v="all">Tous</button>
+      <button data-v="todo" class="on">To do</button><button data-v="done">Posted</button><button data-v="skip">Skipped</button><button data-v="all">All</button>
     </div>
     <div class="seg" id="sort">
-      <button data-v="prio" class="on" title="Portée de l'auteur × fraîcheur : les réponses les plus visibles d'abord">Priorité</button><button data-v="new">Récents</button><button data-v="top">Top radar</button>
+      <button data-v="prio" class="on" title="Author reach × freshness: the most visible replies first">Priority</button><button data-v="new">Newest</button><button data-v="top">Radar top</button>
     </div>
-    <select id="lang" aria-label="Langue des posts"><option value="">Toutes langues</option><option value="en">Anglais</option><option value="fr">Français</option><option value="other">Autres</option></select>
-    <input id="q" type="search" placeholder="Filtrer (auteur, texte…)" aria-label="Filtrer">
+    <select id="lang" aria-label="Post language"><option value="">All languages</option><option value="en">English</option><option value="fr">French</option><option value="other">Other</option></select>
+    <input id="q" type="search" placeholder="Filter (author, text…)" aria-label="Filter">
   </section>
 
   <div id="list" class="rp-list"></div>
-  <div class="rp-more"><button class="btn ghost" id="more">Afficher plus</button></div>
+  <div class="rp-more"><button class="btn ghost" id="more">Show more</button></div>
 
   <section class="rp-tools">
-    <h2>Sauvegarde</h2>
-    <p class="muted">Les validations sont gardées dans ce navigateur. Pour passer du Mac au téléphone : exporte ici, importe là-bas.</p>
+    <h2>Backup</h2>
+    <p class="muted">Confirmations are kept in this browser. To move from the Mac to a phone, export here and import there.</p>
     <div class="rp-row">
-      <button class="btn ghost" id="export">Exporter les validations</button>
-      <label class="btn ghost" for="import">Importer…</label><input type="file" id="import" accept="application/json" hidden>
+      <button class="btn ghost" id="export">Export confirmations</button>
+      <label class="btn ghost" for="import">Import…</label><input type="file" id="import" accept="application/json" hidden>
     </div>
   </section>
 </main>

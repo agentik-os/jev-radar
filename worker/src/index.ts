@@ -15,8 +15,25 @@ const PUBLIC_DATA = new Set([...DATA_FILES]);
 
 const json = (d: unknown, status = 200) => new Response(JSON.stringify(d, null, 1), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
-/** Starts a pass unless one is still running (a stale row older than 55 min does not block). */
-export async function startPass(env: Env, mode: Mode, trigger: string): Promise<{ id?: string; skipped?: string }> {
+/** A full pass is owed when its cron firing was skipped (a "skipped" full row newer than the last started full pass)
+ *  or when no full pass has started for FULL_OWED_AFTER seconds. The next idle fast firing then runs the full pass. */
+export const FULL_OWED_AFTER = 65 * 60;
+
+async function fullOwed(env: Env, t: number): Promise<string | null> {
+  const row = await env.DB.prepare(`SELECT
+      (SELECT MAX(started) FROM runs WHERE mode = 'full' AND status != 'skipped') AS last_full,
+      (SELECT MAX(started) FROM runs WHERE mode = 'full' AND status = 'skipped') AS last_skip`).first<{ last_full: number | null; last_skip: number | null }>();
+  const lastFull = row?.last_full ?? 0, lastSkip = row?.last_skip ?? 0;
+  if (lastSkip > lastFull) return `full firing skipped at ${new Date(lastSkip * 1000).toISOString().slice(11, 16)} UTC`;
+  if (t - lastFull >= FULL_OWED_AFTER) return `no full pass for ${Math.round((t - lastFull) / 60)} min`;
+  return null;
+}
+
+const passId = (mode: string, t: number, suffix = "") => `${mode}-${new Date(t * 1000).toISOString().slice(0, 16).replace(/[-:T]/g, "")}-${crypto.randomUUID().slice(0, 4)}${suffix}`;
+
+/** Starts a pass unless one is still running. A skipped firing is written to the run log; a skipped full pass is then
+ *  owed and runs at the next idle fast firing. */
+export async function startPass(env: Env, mode: Mode, trigger: string): Promise<{ id?: string; mode?: Mode; skipped?: string }> {
   const t = nowS();
   // one pass at a time: the Workflow status of every pass still marked running is authoritative
   const open = (await env.DB.prepare("SELECT id FROM runs WHERE status = 'running' AND mode IN ('full', 'fast') AND started > ? ORDER BY started DESC")
@@ -24,12 +41,28 @@ export async function startPass(env: Env, mode: Mode, trigger: string): Promise<
   for (const busy of open) {
     const inst = await env.RADAR_PASS.get(busy.id).catch(() => null);
     const st = inst ? (await inst.status().catch(() => ({ status: "unknown" }))).status : "unknown";
-    if (["queued", "running", "waiting", "paused", "waitingForPause"].includes(st)) return { skipped: `pass ${busy.id} is ${st}` };
+    if (["queued", "running", "waiting", "paused", "waitingForPause"].includes(st)) {
+      const reason = `pass ${busy.id} is ${st}`;
+      if (trigger !== "manual") await env.DB.prepare("INSERT OR IGNORE INTO runs(id, mode, trigger, started, finished, status, error) VALUES (?,?,?,?,?, 'skipped', ?)")
+        .bind(passId(mode, t, "-skip"), mode, trigger, t, t, reason).run();
+      return { skipped: reason };
+    }
     await env.DB.prepare("UPDATE runs SET status = ? WHERE id = ? AND status = 'running'").bind(st === "complete" ? "complete" : "failed", busy.id).run();
   }
-  const id = `${mode}-${new Date(t * 1000).toISOString().slice(0, 16).replace(/[-:T]/g, "")}-${crypto.randomUUID().slice(0, 4)}`;
-  await env.RADAR_PASS.create({ id, params: { mode, trigger } satisfies PassParams });
-  return { id };
+  if (mode === "fast" && trigger !== "manual") {
+    const owed = await fullOwed(env, t);
+    if (owed) { mode = "full"; trigger = `${trigger} (full owed: ${owed})`; }
+  }
+  const id = passId(mode, t);
+  // the run row is written before the instance exists, so a cron firing a moment later already sees this pass
+  await env.DB.prepare("INSERT OR IGNORE INTO runs(id, mode, trigger, started, status) VALUES (?,?,?,?, 'running')").bind(id, mode, trigger, t).run();
+  try {
+    await env.RADAR_PASS.create({ id, params: { mode, trigger } satisfies PassParams });
+  } catch (e: any) {
+    await env.DB.prepare("UPDATE runs SET status = 'failed', finished = ?, error = ? WHERE id = ?").bind(nowS(), `create: ${String(e?.message || e).slice(0, 400)}`, id).run();
+    throw e;
+  }
+  return { id, mode };
 }
 
 async function admin(env: Env, req: Request, url: URL): Promise<Response> {
@@ -166,6 +199,6 @@ export default {
   async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext) {
     const mode = CRONS[event.cron] ?? "fast";
     const r = await startPass(env, mode, event.cron);
-    console.log(JSON.stringify({ cron: event.cron, mode, ...r }));
+    console.log(JSON.stringify({ cron: event.cron, mode, ...r })); // r.mode is "full" when an owed full pass replaced the fast one
   },
 } satisfies ExportedHandler<Env>;

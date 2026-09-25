@@ -34,6 +34,28 @@ export async function addAccounts(db: D1Database, handles: string[]) {
 }
 
 /** Upserts tracked posts; returns how many were new. Also records their videos for transcription. */
+const articleBlocks = (a: any): number => (((a || {}).content || {}).blocks || []).length;
+
+/** A timeline copy of an X article carries its title but no body (content.blocks = []), while the status endpoint
+ *  returns the full body. A later copy must never replace a stored body with an empty one: the body feeds the
+ *  classification state, so losing it changes the cache key and demotes the post. Mutates `posts` in place. */
+async function keepArticleBodies(db: D1Database, posts: Raw[]): Promise<number> {
+  const bare = [...new Set(posts.filter(t => t.article && Object.keys(t.article).length && !articleBlocks(t.article)).map(t => String(t.id)))];
+  if (!bare.length) return 0;
+  const stored = new Map<string, any>();
+  for (const c of chunks(bare, 90)) {
+    const r = await db.prepare(`SELECT id, json_extract(raw, '$.article') AS article FROM posts WHERE id IN (${c.map(() => "?").join(",")})
+      AND json_array_length(json_extract(raw, '$.article.content.blocks')) > 0`).bind(...c).all<{ id: string; article: string }>();
+    for (const row of r.results) stored.set(row.id, JSON.parse(row.article));
+  }
+  let kept = 0;
+  for (const t of posts) {
+    const a = stored.get(String(t.id));
+    if (a && !articleBlocks(t.article)) { t.article = a; kept++; }
+  }
+  return kept;
+}
+
 export async function upsertPosts(db: D1Database, posts: Raw[]): Promise<number> {
   if (!posts.length) return 0;
   const ids = [...new Set(posts.map(t => String(t.id)))];
@@ -42,6 +64,7 @@ export async function upsertPosts(db: D1Database, posts: Raw[]): Promise<number>
     const r = await db.prepare(`SELECT id FROM posts WHERE id IN (${c.map(() => "?").join(",")})`).bind(...c).all<{ id: string }>();
     for (const row of r.results) known.add(row.id);
   }
+  await keepArticleBodies(db, posts);
   const ts = nowS();
   const stmts: D1PreparedStatement[] = [];
   for (const t of posts) {

@@ -1,4 +1,4 @@
-/* /post : page privée de réponses manuelles sur X */
+/* /post: private page of manual replies on X */
 .rp-tag { font: 12px var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; white-space: nowrap; }
 .rp { padding-bottom: 80px; }
 .rp-head { padding: 44px 0 18px; }

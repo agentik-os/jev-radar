@@ -1,20 +1,20 @@
-// /post : page privée pour répondre à la main, sur X, à chaque post qui parle de System One.
-// Brouillon par post -> intent X pré-rempli (in_reply_to) -> publication manuelle -> validation.
-// Validation automatique : on lit les réponses publiques de @Agentik_os (fxtwitter) et on coche les posts répondus.
+// /post: private page for replying by hand, on X, to every post about System One.
+// One draft per post -> pre-filled X intent (in_reply_to) -> manual publication -> confirmation.
+// Automatic confirmation: the public replies of @Agentik_os are read (fxtwitter) and answered posts are ticked.
 const SELF = "agentik_os";
 const SITE = location.origin;
 const PAGE = 25;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? (n / 1e3).toFixed(1).replace(/\.0$/, "") + "k" : String(n);
-const ago = ts => { const h = (Date.now() / 1000 - ts) / 3600; return h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `${Math.round(h)} h` : `${Math.round(h / 24)} j`; };
+const ago = ts => { const h = (Date.now() / 1000 - ts) / 3600; return h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `${Math.round(h)} h` : `${Math.round(h / 24)} d`; };
 
-// ---------- état local ----------
+// ---------- local state ----------
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
-let STATE = load("jr_post_state", {});      // id -> {s: "done"|"skip", at, url?, v?: vérifié}
-let DRAFTS = load("jr_post_drafts", {});    // id -> texte modifié à la main
-let VARIANT = load("jr_post_variant", {});  // id -> index de variante
+let STATE = load("jr_post_state", {});      // id -> {s: "done"|"skip", at, url?, v?: verified}
+let DRAFTS = load("jr_post_drafts", {});    // id -> text edited by hand
+let VARIANT = load("jr_post_variant", {});  // id -> variant index
 const LAST = load("jr_post_lastvisit", 0);
 save("jr_post_lastvisit", Math.floor(Date.now() / 1000));
 
@@ -23,9 +23,10 @@ $("#theme").onclick = () => { const th = document.documentElement.dataset.theme 
 
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2200); }
 
-// ---------- brouillons ----------
-// Chaque réponse : une accroche liée au post, la promesse (gratuit, tout System One au même endroit, mis à jour chaque heure)
-// et le lien vers la fiche du post sur le radar : l'auteur y voit son propre post, ce qui l'incite à la partager.
+// ---------- drafts ----------
+// Each reply: a hook tied to the post, the promise (free, all of System One in one place, updated hourly)
+// and the link to the post's radar page: the author sees their own post there, which invites them to share it.
+// French posts get French drafts (the reply is written in the author's language); the page itself is in English.
 const EN = {
   build_demo: [
     "This is the kind of System One build people need to see{nm}. It's now on AGK Radar{rk}: a free hub that tracks every System One build, demo and debate on X, updated hourly.\n\n{link}",
@@ -92,7 +93,7 @@ function draft(p, count) {
   return vs[i].replace("{nm}", nm ? (fr ? `, ${nm}` : `, ${nm}`) : "").replace("{rk}", rk)
     .replace("{link}", `${SITE}/p/${p.id}`).replace("{home}", SITE).replace("{count}", count.toLocaleString("en-US"));
 }
-// X compte chaque URL pour 23 caractères, et la plupart des emoji / caractères CJK pour 2.
+// X counts every URL as 23 characters, and most emoji / CJK characters as 2.
 function xLen(t) {
   const urls = t.match(/https?:\/\/\S+/g) || [];
   let rest = urls.reduce((s, u) => s.replace(u, ""), t);
@@ -101,7 +102,7 @@ function xLen(t) {
   return n;
 }
 
-// ---------- données ----------
+// ---------- data ----------
 let POSTS = [], COUNT = 0, shown = PAGE;
 const prio = p => Math.log10((p.a.f || 0) + 10) + 0.5 * Math.log10((p.m?.[4] || 0) + 10) - Math.max(0, (Date.now() / 1000 - p.c) / 3600) / 24;
 
@@ -122,9 +123,9 @@ function current() {
 function stats() {
   const done = POSTS.filter(p => STATE[p.id]?.s === "done"), ver = done.filter(p => STATE[p.id].v);
   const fresh = POSTS.filter(p => p.c > LAST && !STATE[p.id]).length;
-  $("#stats").innerHTML = `<span><b>${POSTS.length}</b> posts</span><span><b>${POSTS.filter(p => !STATE[p.id]).length}</b> à faire</span>` +
-    `<span><b>${done.length}</b> postés (${ver.length} vérifiés sur X)</span>` + (LAST ? `<span><b>${fresh}</b> nouveaux depuis ta dernière visite</span>` : "") +
-    `<span id="sync">synchro X…</span>`;
+  $("#stats").innerHTML = `<span><b>${POSTS.length}</b> posts</span><span><b>${POSTS.filter(p => !STATE[p.id]).length}</b> to do</span>` +
+    `<span><b>${done.length}</b> posted (${ver.length} verified on X)</span>` + (LAST ? `<span><b>${fresh}</b> new since your last visit</span>` : "") +
+    `<span id="sync">X sync…</span>`;
 }
 
 function item(p) {
@@ -134,40 +135,40 @@ function item(p) {
   return `<article class="rp-item ${s?.s || ""}" data-id="${p.id}">
     <div class="rp-src">
       <div class="rp-author"><img src="${esc(p.a.av)}" alt="" loading="lazy" referrerpolicy="no-referrer">
-        <div style="min-width:0"><div class="nm">${esc(p.a.n)}</div><div class="hd">@${esc(p.a.h)} · ${fmt(p.a.f || 0)} abonnés · il y a ${ago(p.c)}</div></div>
-        <div class="rp-badges">${isNew ? `<span class="rp-b new">nouveau</span>` : ""}${p.rk && p.rk <= 100 ? `<span class="rp-b">#${p.rk}</span>` : ""}<span class="rp-b">${esc(p.j.category)}</span></div></div>
+        <div style="min-width:0"><div class="nm">${esc(p.a.n)}</div><div class="hd">@${esc(p.a.h)} · ${fmt(p.a.f || 0)} followers · ${ago(p.c)} ago</div></div>
+        <div class="rp-badges">${isNew ? `<span class="rp-b new">new</span>` : ""}${p.rk && p.rk <= 100 ? `<span class="rp-b">#${p.rk}</span>` : ""}<span class="rp-b">${esc(p.j.category)}</span></div></div>
       <div class="rp-text">${esc(p.t)}</div>
-      <div class="rp-meta"><span>${fmt(p.m[4])} vues · ${fmt(p.m[0])} likes</span><a href="${esc(p.u)}" target="_blank" rel="noopener">voir sur X ↗</a><a href="/p/${p.id}" target="_blank">fiche radar ↗</a></div>
+      <div class="rp-meta"><span>${fmt(p.m[4])} views · ${fmt(p.m[0])} likes</span><a href="${esc(p.u)}" target="_blank" rel="noopener">view on X ↗</a><a href="/p/${p.id}" target="_blank">radar page ↗</a></div>
     </div>
     <div class="rp-reply">
-      <textarea aria-label="Réponse à @${esc(p.a.h)}">${esc(text)}</textarea>
+      <textarea aria-label="Reply to @${esc(p.a.h)}">${esc(text)}</textarea>
       <div class="rp-actions">
         <span class="rp-count ${n > 280 ? "over" : ""}">${n}/280</span>
-        ${nv > 1 && !DRAFTS[p.id] ? `<button class="btn ghost" data-a="alt" title="Autre version">↻ Autre version</button>` : ""}
-        ${DRAFTS[p.id] ? `<button class="btn ghost" data-a="reset">Rétablir</button>` : ""}
+        ${nv > 1 && !DRAFTS[p.id] ? `<button class="btn ghost" data-a="alt" title="Another version">↻ Another version</button>` : ""}
+        ${DRAFTS[p.id] ? `<button class="btn ghost" data-a="reset">Restore</button>` : ""}
         <span class="sp"></span>
-        ${s?.s === "done" ? "" : `<button class="btn ghost" data-a="skip">${s?.s === "skip" ? "Remettre" : "Ignorer"}</button>`}
-        <a class="btn" data-a="open" href="${intent}" target="_blank" rel="noopener">Répondre sur X</a>
+        ${s?.s === "done" ? "" : `<button class="btn ghost" data-a="skip">${s?.s === "skip" ? "Restore" : "Skip"}</button>`}
+        <a class="btn" data-a="open" href="${intent}" target="_blank" rel="noopener">Reply on X</a>
       </div>
       ${s?.s === "done"
-        ? `<div class="rp-done-line">${s.v ? "✓ Réponse vérifiée sur X" : "✓ Marqué posté"} · ${new Date(s.at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}${s.url ? ` · <a href="${esc(s.url)}" target="_blank" rel="noopener">ma réponse ↗</a>` : ""} <button class="btn ghost" data-a="undo">Annuler</button></div>`
-        : `<div class="rp-done-line"><input placeholder="Lien de ta réponse (optionnel, pour vérifier)" data-a="url"><button class="btn ghost" data-a="done">✓ Posté</button></div>`}
+        ? `<div class="rp-done-line">${s.v ? "✓ Reply verified on X" : "✓ Marked as posted"} · ${new Date(s.at).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}${s.url ? ` · <a href="${esc(s.url)}" target="_blank" rel="noopener">my reply ↗</a>` : ""} <button class="btn ghost" data-a="undo">Undo</button></div>`
+        : `<div class="rp-done-line"><input placeholder="Link to your reply (optional, to verify it)" data-a="url"><button class="btn ghost" data-a="done">✓ Posted</button></div>`}
     </div></article>`;
 }
 
 function render() {
   const L = current();
-  $("#list").innerHTML = L.slice(0, shown).map(item).join("") || `<div class="rp-empty">Rien ici. ${$("#status .on").dataset.v === "todo" ? "Tout est répondu 🎉" : ""}</div>`;
+  $("#list").innerHTML = L.slice(0, shown).map(item).join("") || `<div class="rp-empty">Nothing here. ${$("#status .on").dataset.v === "todo" ? "Everything has a reply 🎉" : ""}</div>`;
   $("#more").parentElement.style.display = L.length > shown ? "" : "none";
-  $("#more").textContent = `Afficher plus (${L.length - shown} restants)`;
+  $("#more").textContent = `Show more (${L.length - shown} left)`;
   stats();
   $("#sync").textContent = SYNC;
 }
 
 function mark(id, data) { if (data) STATE[id] = data; else delete STATE[id]; save("jr_post_state", STATE); }
 
-// ---------- vérification sur X (fxtwitter, public, CORS ouvert) ----------
-let SYNC = "synchro X…";
+// ---------- verification on X (fxtwitter, public, open CORS) ----------
+let SYNC = "X sync…";
 async function checkUrl(url, id) {
   const m = String(url).match(/status\/(\d+)/); if (!m) return null;
   const r = await fetch(`https://api.fxtwitter.com/i/status/${m[1]}`).then(r => r.json()).catch(() => null);
@@ -191,12 +192,12 @@ async function syncReplies() {
       cursor = r.cursor?.bottom;
       if (!cursor || !res.length || Math.min(...res.map(t => t.created_timestamp || Infinity)) < oldest) break;
     }
-    SYNC = found ? `synchro X : ${found} réponse${found > 1 ? "s" : ""} trouvée${found > 1 ? "s" : ""}` : "synchro X à jour";
-  } catch { SYNC = "synchro X indisponible"; }
+    SYNC = found ? `X sync: ${found} repl${found > 1 ? "ies" : "y"} found` : "X sync up to date";
+  } catch { SYNC = "X sync unavailable"; }
   render();
 }
 
-// ---------- événements ----------
+// ---------- events ----------
 $("#list").addEventListener("input", e => {
   const ta = e.target.closest("textarea"); if (!ta) return;
   const el = ta.closest(".rp-item"), id = el.dataset.id, n = xLen(ta.value);
@@ -207,7 +208,7 @@ $("#list").addEventListener("input", e => {
 $("#list").addEventListener("click", async e => {
   const b = e.target.closest("[data-a]"); if (!b || b.dataset.a === "url") return;
   const el = b.closest(".rp-item"), id = el.dataset.id, p = POSTS.find(x => x.id === id), a = b.dataset.a;
-  if (a === "open") { el.querySelector('[data-a="url"]')?.focus(); return; } // le lien s'ouvre ; on prépare la validation
+  if (a === "open") { el.querySelector('[data-a="url"]')?.focus(); return; } // the link opens; get the confirmation ready
   if (a === "alt") { VARIANT[id] = ((VARIANT[id] ?? hash(id)) + 1) % variants(p).length; save("jr_post_variant", VARIANT); }
   if (a === "reset") { delete DRAFTS[id]; save("jr_post_drafts", DRAFTS); }
   if (a === "skip") mark(id, STATE[id]?.s === "skip" ? null : { s: "skip", at: Date.now() });
@@ -215,12 +216,12 @@ $("#list").addEventListener("click", async e => {
   if (a === "done") {
     const url = el.querySelector('[data-a="url"]').value.trim();
     if (url) {
-      b.disabled = true; b.textContent = "Vérification…";
+      b.disabled = true; b.textContent = "Checking…";
       const r = await checkUrl(url, id);
-      if (!r) { toast("Lien introuvable sur X, vérifie-le"); b.disabled = false; b.textContent = "✓ Posté"; return; }
-      if (!r.ok || !r.mine) { toast(!r.mine ? "Ce post n'est pas de @Agentik_os" : "Ce post ne répond pas à ce post-là"); b.disabled = false; b.textContent = "✓ Posté"; return; }
-      mark(id, { s: "done", at: Date.now(), url: r.url, v: 1 }); toast("Réponse vérifiée sur X ✓");
-    } else { mark(id, { s: "done", at: Date.now() }); toast("Marqué comme posté"); }
+      if (!r) { toast("Link not found on X, check it"); b.disabled = false; b.textContent = "✓ Posted"; return; }
+      if (!r.ok || !r.mine) { toast(!r.mine ? "This post is not from @Agentik_os" : "This post does not reply to that post"); b.disabled = false; b.textContent = "✓ Posted"; return; }
+      mark(id, { s: "done", at: Date.now(), url: r.url, v: 1 }); toast("Reply verified on X ✓");
+    } else { mark(id, { s: "done", at: Date.now() }); toast("Marked as posted"); }
   }
   render();
 });
@@ -240,14 +241,14 @@ $("#import").onchange = async e => {
   try {
     const d = JSON.parse(await e.target.files[0].text());
     STATE = { ...STATE, ...(d.state || {}) }; DRAFTS = { ...DRAFTS, ...(d.drafts || {}) };
-    save("jr_post_state", STATE); save("jr_post_drafts", DRAFTS); toast("Validations importées"); render();
-  } catch { toast("Fichier illisible"); }
+    save("jr_post_state", STATE); save("jr_post_drafts", DRAFTS); toast("Confirmations imported"); render();
+  } catch { toast("Unreadable file"); }
 };
 
 (async () => {
   const [posts, meta] = await Promise.all([fetch("/data/posts.json").then(r => r.json()), fetch("/data/meta.json").then(r => r.json()).catch(() => ({}))]);
   COUNT = meta.main || posts.length;
-  // Posts principaux sur System One (classés par le radar), hors les nôtres et hors reposts.
+  // Main posts about System One (ranked by the radar), excluding our own and reposts.
   POSTS = posts.filter(p => p.rk && !p.r && p.a?.h?.toLowerCase() !== SELF && (p.j?.about_jev ?? 1) >= 0.5);
   render();
   syncReplies();
