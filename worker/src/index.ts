@@ -18,10 +18,12 @@ const json = (d: unknown, status = 200) => new Response(JSON.stringify(d, null, 
 /** Starts a pass unless one is still running (a stale row older than 55 min does not block). */
 export async function startPass(env: Env, mode: Mode, trigger: string): Promise<{ id?: string; skipped?: string }> {
   const t = nowS();
-  const busy = await env.DB.prepare("SELECT id FROM runs WHERE status = 'running' AND started > ? ORDER BY started DESC LIMIT 1").bind(t - 55 * 60).first<{ id: string }>();
-  if (busy) {
+  // one pass at a time: the Workflow status of every pass still marked running is authoritative
+  const open = (await env.DB.prepare("SELECT id FROM runs WHERE status = 'running' AND mode IN ('full', 'fast') AND started > ? ORDER BY started DESC")
+    .bind(t - 24 * 3600).all<{ id: string }>()).results;
+  for (const busy of open) {
     const inst = await env.RADAR_PASS.get(busy.id).catch(() => null);
-    const st = inst ? (await inst.status()).status : "unknown";
+    const st = inst ? (await inst.status().catch(() => ({ status: "unknown" }))).status : "unknown";
     if (["queued", "running", "waiting", "paused", "waitingForPause"].includes(st)) return { skipped: `pass ${busy.id} is ${st}` };
     await env.DB.prepare("UPDATE runs SET status = ? WHERE id = ? AND status = 'running'").bind(st === "complete" ? "complete" : "failed", busy.id).run();
   }
@@ -74,7 +76,17 @@ async function admin(env: Env, req: Request, url: URL): Promise<Response> {
       out.agk_intelligence = { ok: true, build: r.answers.build?.noul, ms: Date.now() - t1 };
     } catch (e: any) { out.agk_intelligence = { ok: false, error: String(e?.message || e).slice(0, 200), status: e?.status }; }
     const v = url.searchParams.get("video");
-    if (v) { const t2 = Date.now(); const text = await transcribeOne(env, { video_id: "probe", url: v }); out.whisper = { model: env.WHISPER_MODEL, text: text.slice(0, 300), words: text.split(" ").length, ms: Date.now() - t2 }; }
+    if (v) {
+      const t2 = Date.now(); const text = await transcribeOne(env, { video_id: "probe", url: v });
+      out.whisper = { model: env.WHISPER_MODEL, text: text.slice(0, 300), words: text.split(" ").filter(Boolean).length, ms: Date.now() - t2 };
+      if (url.searchParams.get("raw")) { // the model's own answer or error, for diagnosing empty transcripts
+        try { const b = new Uint8Array(await (await fetch(v, { headers: { "User-Agent": "Mozilla/5.0" } })).arrayBuffer());
+          let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000));
+          const r: any = await env.AI.run(env.WHISPER_MODEL as any, { audio: btoa(s), vad_filter: true } as any);
+          out.raw = { text: String(r?.text ?? "").slice(0, 200), info: r?.transcription_info ?? null, segments: (r?.segments || []).length };
+        } catch (e: any) { out.raw = { error: String(e?.message || e).slice(0, 300) }; }
+      }
+    }
     return json(out);
   }
   if (what === "import" && req.method === "POST") return importRows(env, arg, await req.json());
