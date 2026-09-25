@@ -37,7 +37,7 @@ binding = "RADAR_PASS"
 class_name = "RadarPass"
 
 [triggers]
-crons = []  # enabled after the import: ["7 * * * *", "22,37,52 * * * *"]
+crons = ["7 * * * *", "22,37,52 * * * *"]  # full pass hourly at :07, fast pass at :22, :37, :52
 
 [observability]
 enabled = true

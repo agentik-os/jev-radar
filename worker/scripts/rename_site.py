@@ -4,7 +4,7 @@ import re, sys
 from pathlib import Path
 
 ORDERED = [
-    ("Jev Radar", "AGK Radar"), ("jev.agentik-os.com", "radar.agentik-os.com"),
+    ("Jev Radar", "AGK Radar"), ("Jev <em>Radar</em>", "AGK <em>Radar</em>"), ("jev.agentik-os.com", "radar.agentik-os.com"),
     # the classifier is AGK Intelligence
     ("Classified by Jev itself", "Classified by AGK Intelligence"), ("classified by Jev itself", "classified by AGK Intelligence"),
     ("Classé par Jev lui-même", "Classé par AGK Intelligence"), ("classé par Jev lui-même", "classé par AGK Intelligence"),

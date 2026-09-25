@@ -10,7 +10,7 @@ import { buildAndPublish, heartbeat } from "./build";
 const STEP = { retries: { limit: 3, delay: "15 seconds" as const, backoff: "exponential" as const }, timeout: "20 minutes" as const };
 const TIMELINE_SLICE = 150;
 const CLASSIFY_SLICE = 150;
-const VIDEO_SLICE = 4;
+const VIDEO_SLICE = 9;
 const MAX_VIDEOS_PER_PASS = 60;
 const MAX_CLASSIFY_PER_PASS = 3000;
 

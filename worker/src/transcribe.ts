@@ -1,7 +1,7 @@
 // Video transcription with Workers AI Whisper (replaces faster-whisper on the old VPS).
 // The smallest mp4 rendition is sent as-is; a video without an audio track, or one Whisper cannot decode,
 // is stored with an empty or "[failed: …]" transcript so it is not retried every pass (same rule as transcribe.py).
-import { Env, now as nowS } from "./env";
+import { Env, now as nowS, pool } from "./env";
 
 const MAX_BYTES = 25 * 1024 * 1024;
 
@@ -39,11 +39,11 @@ export async function transcribeOne(env: Env, v: { video_id: string; url: string
 /** Step: transcribe a few pending videos; returns the posts whose classification input changed. */
 export async function transcribeSlice(env: Env, videos: { video_id: string; post_id: string; url: string }[]) {
   const ts = nowS();
-  const done: { post_id: string; ok: boolean; failed: boolean }[] = [];
-  for (const v of videos) {
+  // 3 videos at a time: downloads and Whisper runs overlap
+  const done = await pool(videos, 3, async v => {
     const text = await transcribeOne(env, v);
     await env.DB.prepare("INSERT OR REPLACE INTO transcripts(video_id, text, created_at) VALUES (?,?,?)").bind(v.video_id, text, ts).run();
-    done.push({ post_id: v.post_id, ok: !!text && !text.startsWith("[failed"), failed: text.startsWith("[failed") });
-  }
+    return { post_id: v.post_id, ok: !!text && !text.startsWith("[failed"), failed: text.startsWith("[failed") };
+  });
   return { posts: [...new Set(done.map(d => d.post_id))], ok: done.filter(d => d.ok).length, failed: done.filter(d => d.failed).length, empty: done.filter(d => !d.ok && !d.failed).length };
 }
