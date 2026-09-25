@@ -16,6 +16,7 @@ const REFRESH_EVERY = 6 * 3600;
 export const NEW_BUDGET: Record<Mode, number> = { full: 400, fast: 60 };
 export const MAX_ROUNDS: Record<Mode, number> = { full: 8, fast: 3 };
 const FAST_ACTIVE_DAYS = 4;
+const FAST_HOT_MAX = 240;
 const FAST_ALWAYS = new Set(["typesafeai", "completeskeptic", "openrouter", "vercel"]);
 const SELF = "Agentik_os";
 
@@ -56,29 +57,44 @@ async function keepArticleBodies(db: D1Database, posts: Raw[]): Promise<number> 
   return kept;
 }
 
+/** Writes the posts that are new or changed, and nothing else: a post read again with the same content and metrics
+ *  costs no D1 write. Indexed columns (author, created) are written only when they change, since every index entry a
+ *  write touches is billed as one more row. Returns how many were new. Also records their videos for transcription. */
 export async function upsertPosts(db: D1Database, posts: Raw[]): Promise<number> {
   if (!posts.length) return 0;
-  const ids = [...new Set(posts.map(t => String(t.id)))];
-  const known = new Set<string>();
-  for (const c of chunks(ids, 90)) {
-    const r = await db.prepare(`SELECT id FROM posts WHERE id IN (${c.map(() => "?").join(",")})`).bind(...c).all<{ id: string }>();
-    for (const row of r.results) known.add(row.id);
+  const byId = new Map<string, Raw>();
+  for (const t of posts) byId.set(String(t.id), t); // the last copy read wins, as with sequential upserts
+  await keepArticleBodies(db, [...byId.values()]);
+  const stored = new Map<string, { raw: string; author: string; created: number }>();
+  for (const c of chunks([...byId.keys()], 90)) {
+    const r = await db.prepare(`SELECT id, raw, author, created FROM posts WHERE id IN (${c.map(() => "?").join(",")})`).bind(...c).all<{ id: string; raw: string; author: string; created: number }>();
+    for (const row of r.results) stored.set(row.id, row);
   }
-  await keepArticleBodies(db, posts);
   const ts = nowS();
   const stmts: D1PreparedStatement[] = [];
-  for (const t of posts) {
-    const author = (((t.author || {}).screen_name) || "").toLowerCase();
-    stmts.push(db.prepare(`INSERT INTO posts(id, author, created, views, raw, updated_at) VALUES (?,?,?,?,?,?)
-      ON CONFLICT(id) DO UPDATE SET author=excluded.author, created=excluded.created, views=excluded.views, raw=excluded.raw, updated_at=excluded.updated_at`)
-      .bind(String(t.id), author, t.created_timestamp || 0, t.views || 0, JSON.stringify(t), ts));
+  let added = 0;
+  for (const [id, t] of byId) {
+    const raw = JSON.stringify(t), old = stored.get(id);
+    if (old && old.raw === raw) continue;
+    const author = (((t.author || {}).screen_name) || "").toLowerCase(), created = t.created_timestamp || 0, views = t.views || 0;
+    if (!old) {
+      added++;
+      stmts.push(db.prepare(`INSERT INTO posts(id, author, created, views, raw, updated_at) VALUES (?,?,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET views = excluded.views, raw = excluded.raw, updated_at = excluded.updated_at WHERE posts.raw IS NOT excluded.raw`)
+        .bind(id, author, created, views, raw, ts));
+    } else if (old.author !== author || old.created !== created) {
+      stmts.push(db.prepare("UPDATE posts SET author = ?, created = ?, views = ?, raw = ?, updated_at = ? WHERE id = ?").bind(author, created, views, raw, ts, id));
+    } else {
+      stmts.push(db.prepare("UPDATE posts SET views = ?, raw = ?, updated_at = ? WHERE id = ?").bind(views, raw, ts, id));
+    }
+    // videos of a new or changed post (INSERT OR IGNORE writes nothing for a video already recorded)
     for (const v of ((t.media || {}).videos || []) as any[]) {
       if (v.type === "video" && v.id) stmts.push(db.prepare("INSERT OR IGNORE INTO videos(video_id, post_id, url, duration) VALUES (?,?,?,?)")
-        .bind(String(v.id), String(t.id), smallMp4(v) || "", v.duration || 0));
+        .bind(String(v.id), id, smallMp4(v) || "", v.duration || 0));
     }
   }
   await batchRun(db, stmts, 40);
-  return ids.filter(i => !known.has(i)).length;
+  return added;
 }
 
 async function filterUnseen(db: D1Database, pairs: Pair[]): Promise<Pair[]> {
@@ -121,7 +137,7 @@ export async function fetchLinked(env: Env, pending: Pair[]): Promise<{ fetched:
 }
 
 /** Step: decide which accounts to read in this round (crawl.py main loop). */
-export async function planRound(env: Env, mode: Mode, rnd: number, budget: number, now: number): Promise<{ jobs: Job[]; budget: number }> {
+export async function planRound(env: Env, mode: Mode, rnd: number, budget: number, now: number): Promise<{ jobs: Job[]; budget: number; rest?: number }> {
   const db = env.DB;
   const jobs: Job[] = [];
   const fresh = await db.prepare("SELECT handle FROM accounts WHERE last_checked = 0 ORDER BY rowid LIMIT ?").bind(Math.max(budget, 0)).all<{ handle: string }>();
@@ -129,9 +145,22 @@ export async function planRound(env: Env, mode: Mode, rnd: number, budget: numbe
   budget -= fresh.results.length;
   if (rnd === 1) {
     if (mode === "fast") {
-      const r = await db.prepare(`SELECT a.k, a.handle FROM accounts a WHERE a.last_checked > 0 AND (a.k IN (${[...FAST_ALWAYS].map(() => "?").join(",")})
-        OR EXISTS (SELECT 1 FROM posts p WHERE p.author = a.k AND p.created > ?))`).bind(...FAST_ALWAYS, now - FAST_ACTIVE_DAYS * 86400).all<{ k: string; handle: string }>();
-      for (const a of r.results) jobs.push([a.handle, now - OVERLAP, 1]);
+      // Priority order: the always-read accounts, then the FAST_HOT_MAX most recently active ones, then the other active
+      // accounts from the rotation cursor. The pass reads this list for a fixed time (workflow FAST_READ_MS) and moves
+      // the cursor, so every active account is read by some fast pass in turn and a fast pass stays a few minutes long.
+      const r = await db.prepare(`SELECT a.k, a.handle, (SELECT MAX(p.created) FROM posts p WHERE p.author = a.k AND p.created > ?) AS last
+        FROM accounts a WHERE a.last_checked > 0`).bind(now - FAST_ACTIVE_DAYS * 86400).all<{ k: string; handle: string; last: number | null }>();
+      const cursor = (await db.prepare("SELECT v FROM kv WHERE k = 'fast_cursor'").first<{ v: string }>())?.v || "";
+      const always = r.results.filter(a => FAST_ALWAYS.has(a.k));
+      const active = r.results.filter(a => !FAST_ALWAYS.has(a.k) && a.last).sort((a, b) => b.last! - a.last!);
+      const hot = active.slice(0, FAST_HOT_MAX);
+      const rest = active.slice(FAST_HOT_MAX).sort((a, b) => (a.k < b.k ? -1 : a.k > b.k ? 1 : 0));
+      const at = rest.findIndex(a => a.k > cursor);
+      const rotated = at <= 0 ? rest : [...rest.slice(at), ...rest.slice(0, at)];
+      for (const a of [...always, ...hot]) jobs.push([a.handle, now - OVERLAP, 1]);
+      const restFrom = jobs.length;
+      for (const a of rotated) jobs.push([a.handle, now - OVERLAP, 1]);
+      return { jobs, budget, rest: restFrom };
     } else {
       const r = await db.prepare("SELECT handle, last_checked FROM accounts WHERE last_checked > 0 AND (posts > 0 OR ? - last_checked > ?)")
         .bind(now, IDLE_RECHECK).all<{ handle: string; last_checked: number }>();
@@ -158,7 +187,7 @@ async function timeline([handle, since, maxPages]: Job): Promise<{ handle: strin
 }
 
 /** Step: read a slice of the round's timelines. Returns the statuses they link to (next round). */
-export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: number): Promise<{ added: number; pending: Pair[]; failed: number }> {
+export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: number): Promise<{ added: number; pending: Pair[]; failed: number; t: number }> {
   const db = env.DB;
   const res = await pool(jobs, FX_PARALLEL, timeline);
   const found: Raw[] = [];
@@ -169,8 +198,9 @@ export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: numb
   for (const r of res) {
     const k = r.handle.toLowerCase();
     // a fast pass does not push back the next full read of a known account
+    // (and only writes when the failure flag or a first check changes something)
     stmts.push(mode === "fast"
-      ? db.prepare("UPDATE accounts SET failed = ?, last_checked = CASE WHEN last_checked = 0 THEN ? ELSE last_checked END WHERE k = ?").bind(r.ok ? 0 : 1, now, k)
+      ? db.prepare("UPDATE accounts SET failed = ?1, last_checked = CASE WHEN last_checked = 0 THEN ?2 ELSE last_checked END WHERE k = ?3 AND (failed != ?1 OR last_checked = 0)").bind(r.ok ? 0 : 1, now, k)
       : db.prepare("UPDATE accounts SET failed = ?, last_checked = ? WHERE k = ?").bind(r.ok ? 0 : 1, now, k));
     if (!r.ok) failed++;
     for (const t of r.found) {
@@ -183,7 +213,7 @@ export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: numb
   await batchRun(db, stmts);
   const added = await upsertPosts(db, found);
   await addAccounts(db, handles);
-  return { added, pending: [...pend.values()].slice(0, 15000), failed };
+  return { added, pending: [...pend.values()].slice(0, 15000), failed, t: Date.now() };
 }
 
 /** Step (full pass, every 6 h): refresh the metrics of the most viewed posts. */
@@ -201,11 +231,18 @@ export async function refreshTop(env: Env, now: number): Promise<{ refreshed: nu
   return { refreshed: ok.length };
 }
 
+/** Step (fast pass): remember where the rotation stopped. */
+export async function saveFastCursor(env: Env, handle: string | null) {
+  if (handle) await env.DB.prepare("INSERT INTO kv(k, v) VALUES ('fast_cursor', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v WHERE kv.v IS NOT excluded.v").bind(handle.toLowerCase()).run();
+  return { cursor: handle };
+}
+
 /** Step: recount tracked posts per account, trim the seen list, record crawl totals. */
 export async function crawlFinish(env: Env, mode: Mode, added: number, now: number) {
   const db = env.DB;
   await db.batch([
-    db.prepare("UPDATE accounts SET posts = (SELECT COUNT(*) FROM posts p WHERE p.author = accounts.k)"),
+    // recount tracked posts, writing only the accounts whose count changed
+    db.prepare("UPDATE accounts SET posts = (SELECT COUNT(*) FROM posts p WHERE p.author = accounts.k) WHERE posts != (SELECT COUNT(*) FROM posts p WHERE p.author = accounts.k)"),
     db.prepare("DELETE FROM seen_ids WHERE id NOT IN (SELECT id FROM seen_ids ORDER BY id DESC LIMIT 20000)"),
     db.prepare("INSERT OR REPLACE INTO kv(k, v) VALUES (?, ?)").bind(mode === "fast" ? "last_fast" : "last_run", String(now)),
     db.prepare("INSERT OR REPLACE INTO kv(k, v) VALUES ('last_crawl_new', ?)").bind(String(added)),
@@ -230,7 +267,7 @@ export async function replies(env: Env): Promise<{ total: number; found: number 
       const target = ((t.replying_to || {}).status) || ((t.quote || {}).id);
       if (!target) continue;
       if (!known.has(target)) { knownPage = false; found++; known.add(target); }
-      stmts.push(db.prepare("INSERT OR REPLACE INTO replied(target, data) VALUES (?, ?)").bind(String(target), JSON.stringify({
+      stmts.push(db.prepare("INSERT INTO replied(target, data) VALUES (?, ?) ON CONFLICT(target) DO UPDATE SET data = excluded.data WHERE replied.data IS NOT excluded.data").bind(String(target), JSON.stringify({
         reply: t.id, url: t.url ?? null, ts: t.created_timestamp ?? null, kind: t.replying_to ? "reply" : "quote" })));
     }
     cursor = (d.cursor || {}).bottom || null;

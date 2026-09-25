@@ -6,53 +6,46 @@ import { upsertPosts } from "./crawl";
 import { DATA_FILES } from "./build";
 import { getJson } from "./fx";
 import { AiClient } from "./ai";
-import { transcribeOne } from "./transcribe";
+import { Outcome, PendingVideo, hlsUrl, record, transcribeOne } from "./transcribe";
 
 export { RadarPass } from "./workflow";
 
-const CRONS: Record<string, Mode> = { "7 * * * *": "full", "22,37,52 * * * *": "fast" };
+const CRONS: Record<string, Mode> = { "7 * * * *": "full", "2-59/10 * * * *": "fast" };
 const PUBLIC_DATA = new Set([...DATA_FILES]);
 
 const json = (d: unknown, status = 200) => new Response(JSON.stringify(d, null, 1), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
-/** A full pass is owed when its cron firing was skipped by a running fast pass (a "skipped" full row newer than the last started full pass)
- *  or when no full pass has started for FULL_OWED_AFTER seconds. The next idle fast firing then runs the full pass. */
+/** A full pass is owed when none has started for FULL_OWED_AFTER seconds (a lost or failed cron firing); the next fast
+ *  firing then starts it next to the fast pass. */
 export const FULL_OWED_AFTER = 65 * 60;
 
 async function fullOwed(env: Env, t: number): Promise<string | null> {
-  const row = await env.DB.prepare(`SELECT
-      (SELECT MAX(started) FROM runs WHERE mode = 'full' AND status != 'skipped') AS last_full,
-      (SELECT MAX(started) FROM runs WHERE mode = 'full' AND status = 'skipped' AND error NOT LIKE 'covered by%') AS last_skip`).first<{ last_full: number | null; last_skip: number | null }>();
-  const lastFull = row?.last_full ?? 0, lastSkip = row?.last_skip ?? 0;
-  if (lastSkip > lastFull) return `full firing skipped at ${new Date(lastSkip * 1000).toISOString().slice(11, 16)} UTC`;
-  if (t - lastFull >= FULL_OWED_AFTER) return `no full pass for ${Math.round((t - lastFull) / 60)} min`;
-  return null;
+  const row = await env.DB.prepare("SELECT MAX(started) AS last_full FROM runs WHERE mode = 'full' AND status != 'skipped'").first<{ last_full: number | null }>();
+  const lastFull = row?.last_full ?? 0;
+  return t - lastFull >= FULL_OWED_AFTER ? `no full pass for ${Math.round((t - lastFull) / 60)} min` : null;
 }
 
 const passId = (mode: string, t: number, suffix = "") => `${mode}-${new Date(t * 1000).toISOString().slice(0, 16).replace(/[-:T]/g, "")}-${crypto.randomUUID().slice(0, 4)}${suffix}`;
+const ACTIVE = ["queued", "running", "waiting", "paused", "waitingForPause"];
 
-/** Starts a pass unless one is still running. A skipped firing is written to the run log; a skipped full pass is then
- *  owed and runs at the next idle fast firing. */
+/** Starts a pass unless one of the same mode is still running. Full and fast passes hold separate leases: a fast pass
+ *  (a few minutes, then publish) runs while a full pass crawls for most of an hour, so the site keeps publishing.
+ *  A skipped firing is written to the run log ("covered by" the pass of the same mode that is running). */
 export async function startPass(env: Env, mode: Mode, trigger: string): Promise<{ id?: string; mode?: Mode; skipped?: string }> {
   const t = nowS();
-  // one pass at a time: the Workflow status of every pass still marked running is authoritative
-  const open = (await env.DB.prepare("SELECT id, mode FROM runs WHERE status = 'running' AND mode IN ('full', 'fast') AND started > ? ORDER BY started DESC")
-    .bind(t - 24 * 3600).all<{ id: string; mode: string }>()).results;
+  // the Workflow status of every pass of this mode still marked running is authoritative
+  const open = (await env.DB.prepare("SELECT id FROM runs WHERE status = 'running' AND mode = ? AND started > ? ORDER BY started DESC")
+    .bind(mode, t - 24 * 3600).all<{ id: string }>()).results;
   for (const busy of open) {
     const inst = await env.RADAR_PASS.get(busy.id).catch(() => null);
     const st = inst ? (await inst.status().catch(() => ({ status: "unknown" }))).status : "unknown";
-    if (["queued", "running", "waiting", "paused", "waitingForPause"].includes(st)) {
-      // a firing skipped while a full pass runs is covered by that pass; one skipped by a fast pass makes the full pass owed
-      const reason = busy.mode === "full" ? `covered by full pass ${busy.id} (${st})` : `pass ${busy.id} is ${st}`;
+    if (ACTIVE.includes(st)) {
+      const reason = `covered by ${mode} pass ${busy.id} (${st})`;
       if (trigger !== "manual") await env.DB.prepare("INSERT OR IGNORE INTO runs(id, mode, trigger, started, finished, status, error) VALUES (?,?,?,?,?, 'skipped', ?)")
         .bind(passId(mode, t, "-skip"), mode, trigger, t, t, reason).run();
       return { skipped: reason };
     }
     await env.DB.prepare("UPDATE runs SET status = ? WHERE id = ? AND status = 'running'").bind(st === "complete" ? "complete" : "failed", busy.id).run();
-  }
-  if (mode === "fast" && trigger !== "manual") {
-    const owed = await fullOwed(env, t);
-    if (owed) { mode = "full"; trigger = `${trigger} (full owed: ${owed})`; }
   }
   const id = passId(mode, t);
   // the run row is written before the instance exists, so a cron firing a moment later already sees this pass
@@ -111,17 +104,31 @@ async function admin(env: Env, req: Request, url: URL): Promise<Response> {
     } catch (e: any) { out.agk_intelligence = { ok: false, error: String(e?.message || e).slice(0, 200), status: e?.status }; }
     const v = url.searchParams.get("video");
     if (v) {
-      const t2 = Date.now(); const text = await transcribeOne(env, { video_id: "probe", url: v });
-      out.whisper = { model: env.WHISPER_MODEL, text: text.slice(0, 300), words: text.split(" ").filter(Boolean).length, ms: Date.now() - t2 };
-      if (url.searchParams.get("raw")) { // the model's own answer or error, for diagnosing empty transcripts
-        try { const b = new Uint8Array(await (await fetch(v, { headers: { "User-Agent": "Mozilla/5.0" } })).arrayBuffer());
-          let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000));
-          const r: any = await env.AI.run(env.WHISPER_MODEL as any, { audio: btoa(s), vad_filter: true } as any);
-          out.raw = { text: String(r?.text ?? "").slice(0, 200), info: r?.transcription_info ?? null, segments: (r?.segments || []).length };
-        } catch (e: any) { out.raw = { error: String(e?.message || e).slice(0, 300) }; }
-      }
+      const t2 = Date.now();
+      try { const o = await transcribeOne(env, { url: v, hls: url.searchParams.get("hls") });
+        out.whisper = { model: env.WHISPER_MODEL, status: o.status, text: o.text.slice(0, 300), words: o.text.split(" ").filter(Boolean).length, ms: Date.now() - t2 }; }
+      catch (e: any) { out.whisper = { transient: String(e?.message || e).slice(0, 300), ms: Date.now() - t2 }; }
     }
     return json(out);
+  }
+  if (what === "transcribe" && arg) {
+    // one stored video through the pass's transcription path; ?store=1 records the outcome as a pass would
+    const row = await db.prepare(`SELECT v.video_id, v.post_id, v.url, v.duration, v.attempts, v.last_error, p.raw, t.text AS old_text, t.status AS old_status, t.created_at AS old_at
+      FROM videos v JOIN posts p ON p.id = v.post_id LEFT JOIN transcripts t ON t.video_id = v.video_id WHERE v.video_id = ?`).bind(arg).first<any>();
+    if (!row) return json({ error: "unknown video" }, 404);
+    const vid = (((JSON.parse(row.raw).media || {}).videos || []) as any[]).find((y: any) => String(y.id) === row.video_id);
+    const pv: PendingVideo = { video_id: row.video_id, post_id: row.post_id, url: row.url, duration: row.duration, attempts: row.attempts, hls: hlsUrl(vid) };
+    const t0 = Date.now();
+    let o: Outcome | { transient: string };
+    try { o = await transcribeOne(env, pv); } catch (e: any) { o = { transient: String(e?.message || e) }; }
+    const ms = Date.now() - t0;
+    const stored = url.searchParams.get("store") === "1" ? await record(env, pv, o) : null;
+    const after = await db.prepare("SELECT t.status, length(t.text) AS chars, t.created_at, v.attempts FROM videos v LEFT JOIN transcripts t ON t.video_id = v.video_id WHERE v.video_id = ?").bind(arg).first();
+    const text = "text" in o ? o.text : "";
+    return json({ video_id: row.video_id, post_id: row.post_id, duration: row.duration, hls: !!pv.hls,
+      before: { status: row.old_status, text: row.old_text === null ? null : String(row.old_text).slice(0, 80), created_at: row.old_at, attempts: row.attempts },
+      outcome: "transient" in o ? o : { status: o.status, detail: o.detail, source: o.source, audio_seconds: o.seconds, chunks: o.chunks, words: text.split(" ").filter(Boolean).length,
+        head: text.slice(0, 240), tail: text.slice(-160) }, ms, stored, after });
   }
   if (what === "import" && req.method === "POST") return importRows(env, arg, await req.json());
   if (what === "r2" && req.method === "PUT" && arg && (PUBLIC_DATA.has(arg) || arg === "ranks.json")) {
@@ -199,7 +206,8 @@ export default {
 
   async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext) {
     const mode = CRONS[event.cron] ?? "fast";
-    const r = await startPass(env, mode, event.cron);
-    console.log(JSON.stringify({ cron: event.cron, mode, ...r })); // r.mode is "full" when an owed full pass replaced the fast one
+    const r: Record<string, unknown> = await startPass(env, mode, event.cron);
+    if (mode === "fast") { const owed = await fullOwed(env, nowS()); if (owed) r.full = await startPass(env, "full", `${event.cron} (full owed: ${owed})`); }
+    console.log(JSON.stringify({ cron: event.cron, mode, ...r }));
   },
 } satisfies ExportedHandler<Env>;

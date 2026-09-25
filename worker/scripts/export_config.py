@@ -29,6 +29,29 @@ def rename(s):
     return s
 
 
+# Build breakdowns ("The system" on /builds, /top, /all and the post pages) are site-written text: the model is named
+# "System One" there, never by a model id. Third-party project names stay as their authors wrote them (the "Code:"
+# links keep them) but are not put forward in the sentence.
+SYS_TEXT = [
+    ("call System One as `typesafe-ai/jev` with state + questions", "call System One through the gateway with state + questions"),
+    ("System One est appelable via le modèle `typesafe-ai/jev` avec state + questions", "System One est appelable via la passerelle avec state + questions"),
+    ("Claude plugin (fast-jev-compaction): instead", "Claude plugin: instead"),
+    ("Plugin Claude (fast-jev-compaction) : au lieu", "Plugin Claude : au lieu"),
+    ("Cua's 'jev-use': computer control (macOS, Windows, Linux) where System One picks", "Computer control by Cua (macOS, Windows, Linux): System One picks"),
+    ("« jev-use » de Cua : pilotage d'ordinateur (macOS, Windows, Linux) où System One choisit", "Pilotage d'ordinateur par Cua (macOS, Windows, Linux) : System One choisit"),
+]
+
+
+def sys_text(s):
+    s = rename(s)
+    for a, b in SYS_TEXT:
+        s = s.replace(a, b)
+    s = re.sub(r"`?typesafe-ai/jev`?", "System One", s)  # any other model id
+    # what is left of the name is inside a third-party "Code:" link
+    assert not re.search(r"jev", re.sub(r"github\.com/\S+", "", s), re.I), s
+    return s
+
+
 def deep(o):
     if isinstance(o, dict):
         return {k: deep(v) for k, v in o.items()}
@@ -68,7 +91,7 @@ dump("ideas.json", {"ideas": out_ideas, "criteria": CRIT, "questions_text": QTEX
 
 # 4. money plays and system breakdowns (renamed)
 dump("plays.json", deep(plays.PLAYS))
-dump("systems.json", deep(json.loads((ROOT / "pipeline/systems.json").read_text())))
+dump("systems.json", {k: {f: sys_text(t) for f, t in v.items()} for k, v in json.loads((ROOT / "pipeline/systems.json").read_text()).items()})
 
 # 5. seeds (accounts and status links)
 seeds = [l.strip() for l in (ROOT / "pipeline/seeds.txt").read_text().splitlines() if l.strip() and not l.strip().startswith("#")]

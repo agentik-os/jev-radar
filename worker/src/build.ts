@@ -5,6 +5,7 @@ import { IDEA_WEIGHTS, PENDING, WEIGHTS, buildIdeas, buildPlays, compact, nicheB
 
 export const DATA_FILES = ["posts.json", "niches.json", "ideas.json", "plays.json", "replied.json", "meta.json"];
 const PAGE = 1500;
+const HISTORY_EVERY = 1800;
 
 export async function buildAndPublish(env: Env, now: number, runId: string) {
   const db = env.DB;
@@ -37,12 +38,16 @@ export async function buildAndPublish(env: Env, now: number, runId: string) {
   const refRanks = ref ? JSON.parse(ref.ranks) : null;
   for (const b of board) b.prev_rank = refRanks ? (refRanks[b.id] ?? null) : null;
   const ranks = Object.fromEntries(board.map(b => [b.id, b.rank])), scores = Object.fromEntries(board.map(b => [b.id, b.score]));
-  await db.batch([
+  // one history point per half hour at most, so the trend line keeps its time span however often the site publishes
+  const lastHist = (await db.prepare("SELECT MAX(ts) AS ts FROM niche_history").first<{ ts: number | null }>())?.ts ?? 0;
+  if (now - lastHist >= HISTORY_EVERY) await db.batch([
     db.prepare("INSERT OR REPLACE INTO niche_history(ts, ranks, scores) VALUES (?,?,?)").bind(now, JSON.stringify(ranks), JSON.stringify(scores)),
     db.prepare("DELETE FROM niche_history WHERE ts NOT IN (SELECT ts FROM niche_history ORDER BY ts DESC LIMIT 500)"),
   ]);
   const trend = (await db.prepare("SELECT ts, scores FROM niche_history ORDER BY ts DESC LIMIT 60").all<{ ts: number; scores: string }>()).results
     .reverse().map(h => ({ ts: h.ts, scores: JSON.parse(h.scores) }));
+  // the trend always ends with the current scores, also between two recorded points
+  if (!trend.length || trend[trend.length - 1].ts !== now) { trend.push({ ts: now, scores }); if (trend.length > 60) trend.shift(); }
 
   const evals: Record<string, any> = {};
   for (const r of (await db.prepare("SELECT k, data FROM ideas_eval").all<{ k: string; data: string }>()).results) evals[r.k] = JSON.parse(r.data);
@@ -81,14 +86,4 @@ export async function buildAndPublish(env: Env, now: number, runId: string) {
 
 async function put(env: Env, name: string, body: string) {
   await env.BUCKET.put(`data/${name}`, body, { httpMetadata: { contentType: "application/json; charset=utf-8", cacheControl: "public, max-age=30" } });
-}
-
-/** Fast pass without new posts: only the "checked" heartbeat changes. */
-export async function heartbeat(env: Env, now: number) {
-  const obj = await env.BUCKET.get("data/meta.json");
-  if (!obj) return { checked: null };
-  const meta: any = JSON.parse(await obj.text());
-  meta.checked = now;
-  await put(env, "meta.json", JSON.stringify(meta));
-  return { checked: now, updated: meta.updated };
 }

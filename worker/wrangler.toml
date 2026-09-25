@@ -37,7 +37,7 @@ binding = "RADAR_PASS"
 class_name = "RadarPass"
 
 [triggers]
-crons = ["7 * * * *", "22,37,52 * * * *"]  # full pass hourly at :07, fast pass at :22, :37, :52
+crons = ["7 * * * *", "2-59/10 * * * *"]  # full pass hourly at :07; fast pass every 10 minutes (:02, :12, ...), alongside a running full pass
 
 [observability]
 enabled = true

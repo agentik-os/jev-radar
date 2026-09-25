@@ -4,8 +4,8 @@
   "en": "Open source browser agent (Browser Use). At each step the DOM state and the possible actions go to System One, which picks the action (click, scroll…); a small LLM only types text. Found flights in 7 s for $0.0039."
  },
  "2100739055923425589": {
-  "fr": "Plugin Claude (fast-jev-compaction) : au lieu de résumer la conversation avec un LLM, System One juge chaque appel d'outil passé (« encore utile ? ») et supprime les inutiles. Une session passe de ~1M à 86k tokens en 1 s. Code : github.com/tamaratran/fast-jev-compaction.",
-  "en": "Claude plugin (fast-jev-compaction): instead of summarizing the conversation with an LLM, System One judges every past tool call (still useful?) and drops the useless ones. A session goes from ~1M to 86k tokens in 1 s. Code: github.com/tamaratran/fast-jev-compaction."
+  "fr": "Plugin Claude : au lieu de résumer la conversation avec un LLM, System One juge chaque appel d'outil passé (« encore utile ? ») et supprime les inutiles. Une session passe de ~1M à 86k tokens en 1 s. Code : github.com/tamaratran/fast-jev-compaction.",
+  "en": "Claude plugin: instead of summarizing the conversation with an LLM, System One judges every past tool call (still useful?) and drops the useless ones. A session goes from ~1M to 86k tokens in 1 s. Code: github.com/tamaratran/fast-jev-compaction."
  },
  "2100086301894881578": {
   "fr": "Bot Super Mario Bros : l'émulateur est lu, l'état du jeu est structuré en texte et System One choisit la prochaine touche en temps réel. Code : github.com/fhshaik/typesafe-mario.",
@@ -40,8 +40,8 @@
   "en": "Ultra-fast web navigation demo: opencode's browser-use CLI with System One picking every action on the page."
  },
  "2100649543079502213": {
-  "fr": "« jev-use » de Cua : pilotage d'ordinateur (macOS, Windows, Linux) où System One choisit les actions à l'écran via le Cua Driver. Code : github.com/trycua/cua.",
-  "en": "Cua's 'jev-use': computer control (macOS, Windows, Linux) where System One picks on-screen actions through the Cua Driver. Code: github.com/trycua/cua."
+  "fr": "Pilotage d'ordinateur par Cua (macOS, Windows, Linux) : System One choisit les actions à l'écran via le Cua Driver. Code : github.com/trycua/cua.",
+  "en": "Computer control by Cua (macOS, Windows, Linux): System One picks on-screen actions through the Cua Driver. Code: github.com/trycua/cua."
  },
  "2100585126652481915": {
   "fr": "Relecture de pull requests : le diff est envoyé en un seul appel avec 14 questions (secret en dur, injection SQL, touche l'auth, supprime des tests, casse l'API, migration, description cohérente…). 0,00007 $ par PR, réponse en 0,5 s.",
@@ -52,8 +52,8 @@
   "en": "System One 'talking': at each step System One picks the next word among a few hundred common English words and punctuation, building sentences out of choices."
  },
  "2100378959653507175": {
-  "fr": "Intégration Vercel AI Gateway : System One est appelable via le modèle `typesafe-ai/jev` avec state + questions, pour des agents qui décident, routent, notent et s'arrêtent en millisecondes.",
-  "en": "Vercel AI Gateway integration: call System One as `typesafe-ai/jev` with state + questions, for agents that decide, route, score and stop in milliseconds."
+  "fr": "Intégration Vercel AI Gateway : System One est appelable via la passerelle avec state + questions, pour des agents qui décident, routent, notent et s'arrêtent en millisecondes.",
+  "en": "Vercel AI Gateway integration: call System One through the gateway with state + questions, for agents that decide, route, score and stop in milliseconds."
  },
  "2100756930054504776": {
   "fr": "Lanceur prédictif : à chaque frappe, System One classe les fichiers et apps selon l'intention (« le pdf que je viens de télécharger ») au lieu d'une recherche floue par nom.",
