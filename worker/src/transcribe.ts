@@ -70,13 +70,26 @@ const HALLUCINATIONS = new Set([
   "subtitlesbytheamaraorgcommunity", "subtitlesbyamaraorg", "formoreinformationvisitwwwfemaorg", "formoreinformationvisitwwwfemagov",
   "ご視聴ありがとうございました", "ありがとうございました", "おやすみなさい", "시청해주셔서감사합니다", "감사합니다", "mbc뉴스", "字幕由amaraorg社区提供", "谢谢观看", "请不吝点赞订阅转发打赏支持明镜与点点栏目",
   "untertitelderamaraorgcommunity", "untertitelimauftragdeszdffürfunkinterpretation", "soustitragestfrançais", "soustitresréalisésparlacommunautédamaraorg",
-  "gracias", "graciasporver", "obrigado", "merci", "danke",
+  "gracias", "graciasporver", "obrigado", "merci", "danke", "wellberightback", "wellbebackrightafterthis", "seeyounexttime",
 ]);
 const norm = (s: string) => s.toLowerCase().normalize("NFKC").replace(/[\p{P}\p{S}\s]+/gu, "");
+const sentences = (text: string) => text.split(/(?<=[.!?])\s+|(?<=[。！？])\s*|\n+/).filter(s => norm(s));
+const isHallucination = (p: string) => HALLUCINATIONS.has(p) || HALLUCINATIONS.has(p.replace(/(.+?)\1+$/, "$1"));
 /** True when every sentence of the text is a known non-speech hallucination (see HALLUCINATIONS). */
 export function hallucinated(text: string): boolean {
-  const parts = text.split(/(?<=[.!?])\s+|(?<=[。！？])\s*|\n+/).map(norm).filter(Boolean);
-  return parts.length > 0 && parts.every(p => HALLUCINATIONS.has(p) || HALLUCINATIONS.has(p.replace(/(.+?)\1+$/, "$1")));
+  const parts = sentences(text).map(norm);
+  return parts.length > 0 && parts.every(isHallucination);
+}
+/** The distinct sentences of a text that are not known hallucinations, and their words: a repeated line counts once. */
+function distinctSpeech(text: string): { sentences: number; words: number; set: Set<string> } {
+  const seen = new Set<string>();
+  let words = 0;
+  for (const s of sentences(text)) {
+    const n = norm(s);
+    if (isHallucination(n) || seen.has(n)) continue;
+    seen.add(n); words += s.split(/\s+/).filter(Boolean).length;
+  }
+  return { sentences: seen.size, words, set: seen };
 }
 
 interface Heard { text: string; speech: number | null; removed: number; novad?: boolean; segments?: any[]; info?: any }
@@ -84,11 +97,16 @@ interface Heard { text: string; speech: number | null; removed: number; novad?: 
 // When the voice activity detection keeps under 1 s of audio, the audio is heard a second time without it: Whisper's VAD
 // (Silero) misses speech under loud game sound, gunfire or music (2103613540166664192, a 5-minute game video: VAD 0 s,
 // while the voices say "Reload!", "Get to the chopper!", "Rescue 7 affirmative"). That second result is kept only when
-// it is clearly speech: at least FALLBACK_MIN_SEGMENTS segments and FALLBACK_MIN_WORDS words (what radar.speech needs
-// to send a transcript to the classifier) after the filters below, not one phrase looping. On silence and music it is
-// one or two invented lines ("Thank you.", "We'll be right back.", "This video is brought to you by…"), so those videos
-// stay no_speech. condition_on_previous_text is off for it, since conditioning makes Whisper loop on one line there.
-const FALLBACK_MIN_SEGMENTS = 3, FALLBACK_MIN_WORDS = 15;
+// it is clearly speech: after the filters below, at least FALLBACK_MIN_SEGMENTS segments, and at least FALLBACK_MIN_SENTENCES
+// distinct sentences with FALLBACK_MIN_WORDS words (what radar.speech needs to send a transcript to the classifier) that
+// are not known hallucinations, each repeated line counted once. On silence and music the second hearing writes a few
+// invented lines, often repeated ("Thank you.", "We'll be right back." three times, "I will be back then." three times,
+// "This video is brought to you by…"), so those videos stay no_speech. condition_on_previous_text is off for it, since
+// conditioning makes Whisper loop on one line there. Whisper invents a different text on each hearing of noise, and
+// hears real speech the same way twice, so a clear result is heard once more and kept only when the two hearings share
+// at least FALLBACK_AGREE of their distinct sentences (a near-silent 9-second clip got a 27-word invention in 1 run of
+// 10; the game videos repeat "Reloading!", "Get to the chopper!" on every hearing).
+const FALLBACK_MIN_SEGMENTS = 3, FALLBACK_MIN_SENTENCES = 3, FALLBACK_MIN_WORDS = 15, FALLBACK_AGREE = 0.3;
 
 async function runWhisper(env: Env, input: Record<string, unknown>): Promise<any> {
   let last = "";
@@ -147,10 +165,17 @@ async function whisper(env: Env, audio: Uint8Array, debug = false): Promise<Hear
   if (f.text || speech === null || speech >= 1) return { text: f.text, speech, removed: f.removed, ...dbg };
   const out2 = await runWhisper(env, { audio: body, vad_filter: false, condition_on_previous_text: false });
   const g = filtered(out2);
-  const words = g.text.split(" ").filter(Boolean);
-  const clear = g.kept >= FALLBACK_MIN_SEGMENTS && words.length >= FALLBACK_MIN_WORDS && new Set(words.map(w => w.toLowerCase())).size / words.length > 0.25;
+  const isClear = (x: { kept: number; text: string }) => {
+    const ds = distinctSpeech(x.text);
+    return x.kept >= FALLBACK_MIN_SEGMENTS && ds.sentences >= FALLBACK_MIN_SENTENCES && ds.words >= FALLBACK_MIN_WORDS ? ds.set : null;
+  };
+  const a = isClear(g);
   const dbg2 = debug ? { segments: debugSegs(out2), info: { vad: info, novad: out2?.transcription_info } } : {};
-  if (clear) return { text: g.text, speech: null, removed: g.removed, novad: true, ...dbg2 };
+  if (a) {
+    const b = isClear(filtered(await runWhisper(env, { audio: body, vad_filter: false, condition_on_previous_text: false })));
+    const shared = b ? [...a].filter(x => b.has(x)).length / Math.min(a.size, b.size) : 0;
+    if (shared >= FALLBACK_AGREE) return { text: g.text, speech: null, removed: g.removed, novad: true, ...dbg2 };
+  }
   return { text: "", speech, removed: f.removed + (g.text ? 1 : 0), ...dbg2 };
 }
 
