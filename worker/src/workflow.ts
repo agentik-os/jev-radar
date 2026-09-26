@@ -47,7 +47,7 @@ export class RadarPass extends WorkflowEntrypoint<Env, PassParams> {
       const init = await S("crawl-init", STEP, e => crawlInit(e, now));
       let pending: Pair[] = init.pending;
       let budget = NEW_BUDGET[mode];
-      let added = 0, linked = 0, accountsRead = 0, failedAccounts = 0, planned = 0, pages = 0, cursor: string | null = null;
+      let added = 0, linked = 0, accountsRead = 0, failedAccounts = 0, throttledAccounts = 0, planned = 0, pages = 0, cursor: string | null = null;
       const newAuthors = new Set<string>();
       const fx: FxStats = fxStats();
       for (let rnd = 1; rnd <= MAX_ROUNDS[mode] + 1; rnd++) {
@@ -64,7 +64,7 @@ export class RadarPass extends WorkflowEntrypoint<Env, PassParams> {
         let read = 0;
         for (let i = 0; i < slices.length; i++) {
           const r = await S(fastRound ? `r1-fast-read-${i}` : `r${rnd}-timelines-${i}`, STEP, e => readTimelines(e, mode, slices[i], now));
-          added += r.added; failedAccounts += r.failed; accountsRead += slices[i].length; read += slices[i].length;
+          added += r.added; failedAccounts += r.failed; throttledAccounts += r.throttled || 0; accountsRead += slices[i].length; read += slices[i].length;
           pending.push(...r.pending);
           for (const a of r.authors || []) newAuthors.add(a);
           if (r.fx) addFx(fx, r.fx);
@@ -81,7 +81,7 @@ export class RadarPass extends WorkflowEntrypoint<Env, PassParams> {
         }
       }
       if (mode === "full") stats.refresh = await S("refresh-top", STEP, e => refreshTop(e, now));
-      stats.crawl = await S("crawl-finish", STEP, async e => ({ ...(await crawlFinish(e, mode, added, now, [...newAuthors])), linked, accountsRead, failedAccounts,
+      stats.crawl = await S("crawl-finish", STEP, async e => ({ ...(await crawlFinish(e, mode, added, now, [...newAuthors])), linked, accountsRead, failedAccounts, throttledAccounts,
         pages, fx, ...(mode === "fast" ? { planned, cursor } : {}) }));
 
       // ---- transcription (Workers AI Whisper): short videos in every pass, long ones (first 30 minutes) in the full pass

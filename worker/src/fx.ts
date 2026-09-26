@@ -14,7 +14,11 @@ export function addFx(a: FxStats, b: FxStats) {
   return a;
 }
 
-export async function getJson(url: string, st?: FxStats, tries = 4): Promise<any | null> {
+/** How a request ended: "ok" (2xx, body parsed), "gone" (400/401/403/404: fxtwitter's answer about the account or post,
+ *  which it also gives for a live account now and then) or "transient" (429, 5xx, timeout or network error on every try). */
+export type FxKind = "ok" | "gone" | "transient";
+
+export async function fetchJson(url: string, st?: FxStats, tries = 4): Promise<{ d: any | null; kind: FxKind }> {
   for (let i = 0; i < tries; i++) {
     fxCalls++;
     if (st) st.calls++;
@@ -22,13 +26,17 @@ export async function getJson(url: string, st?: FxStats, tries = 4): Promise<any
     let why = "";
     try {
       const r = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(30_000) });
-      if ([400, 401, 403, 404].includes(r.status)) { await r.body?.cancel(); return null; }
-      if (r.ok) { const d = await r.json(); if (st) st.wait_ms += Date.now() - t0; return d; }
+      if ([400, 401, 403, 404].includes(r.status)) { await r.body?.cancel(); if (st) st.wait_ms += Date.now() - t0; return { d: null, kind: "gone" }; }
+      if (r.ok) { const d = await r.json(); if (st) st.wait_ms += Date.now() - t0; return { d, kind: "ok" }; }
       why = String(r.status);
       await r.body?.cancel();
     } catch (e: any) { why = /timed? ?out|abort/i.test(String(e?.message || e)) ? "timeout" : "error"; }
     if (st) { st.wait_ms += Date.now() - t0; st.retried[why] = (st.retried[why] || 0) + 1; }
     if (i < tries - 1) { await sleep(2000 * (i + 1)); if (st) st.backoff_ms += 2000 * (i + 1); }
   }
-  return null;
+  return { d: null, kind: "transient" };
+}
+
+export async function getJson(url: string, st?: FxStats, tries = 4): Promise<any | null> {
+  return (await fetchJson(url, st, tries)).d;
 }

@@ -39,6 +39,9 @@ SYS_TEXT = [
     ("Plugin Claude (fast-jev-compaction) : au lieu", "Plugin Claude : au lieu"),
     ("Cua's 'jev-use': computer control (macOS, Windows, Linux) where System One picks", "Computer control by Cua (macOS, Windows, Linux): System One picks"),
     ("« jev-use » de Cua : pilotage d'ordinateur (macOS, Windows, Linux) où System One choisit", "Pilotage d'ordinateur par Cua (macOS, Windows, Linux) : System One choisit"),
+    # the author's project "Jev Use": the generic rename would invent a project called "System One Use"
+    ("'System One Use' for Codex (China): System One is the decision layer", "Computer use for Codex (China): System One is the decision layer"),
+    ("« System One Use » pour Codex (Chine) : System One sert de couche de décision", "Pilotage d'ordinateur pour Codex (Chine) : System One sert de couche de décision"),
 ]
 
 
@@ -49,6 +52,8 @@ def sys_text(s):
     s = re.sub(r"`?typesafe-ai/jev`?", "System One", s)  # any other model id
     # what is left of the name is inside a third-party "Code:" link
     assert not re.search(r"jev", re.sub(r"github\.com/\S+", "", s), re.I), s
+    # and no project name was made up by the rename: "System One" never opens a quoted name ('System One Use')
+    assert not re.search(r"(?:^|[\s(])(?:'|‘|«\s?)System One\b", s), s
     return s
 
 

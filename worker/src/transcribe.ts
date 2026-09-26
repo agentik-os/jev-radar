@@ -6,8 +6,9 @@
 // to its smallest mp4 rendition, sent whole when it is at most MAX_BYTES.
 //
 // An empty transcript is kept only when it is proven: the playlist declares no audio track (no_audio), or Whisper found
-// no speech in the audio (no_speech, e.g. music only): its voice activity detection kept under 1 s of audio, or every
-// segment it wrote is one of its known hallucinations on non-speech audio (see `hallucinated`). Every other error is
+// no speech in the audio (no_speech, e.g. music only): its voice activity detection kept under 1 s of audio and a second
+// hearing without it found no clear speech (see `whisper`), or every segment it wrote is one of its known hallucinations
+// on non-speech audio (see `hallucinated`). Every other error is
 // retried with back-off inside the call; if it still fails the video stays pending and the next pass tries again, and
 // after MAX_ATTEMPTS passes it is stored as "[failed: …]" so it is not retried forever. Running out of the Worker
 // invocation's subrequest budget is not a property of the video: it is not retried in that invocation and does not count
@@ -78,52 +79,79 @@ export function hallucinated(text: string): boolean {
   return parts.length > 0 && parts.every(p => HALLUCINATIONS.has(p) || HALLUCINATIONS.has(p.replace(/(.+?)\1+$/, "$1")));
 }
 
-interface Heard { text: string; speech: number | null; removed: number; segments?: any[] }
+interface Heard { text: string; speech: number | null; removed: number; novad?: boolean; segments?: any[]; info?: any }
 
-/** One Whisper request with retries: Workers AI sometimes answers "3030: Failed to decode audio file" for audio it
- *  decodes on the next try, so no error is taken as a property of the video.
- *  Segments Whisper itself rates as probably not speech (no_speech_prob > 0.6 with avg_logprob < -1, its own rule; Workers
- *  AI reports no_speech_prob 0), as looping text (compression_ratio > 2.4), or as a low-confidence loop (avg_logprob < -1
- *  with compression_ratio > 2.2: e.g. one sentence repeated over a song) or as a guess (avg_logprob < -2) are dropped,
- *  and so is a chunk left with under 60 words, every segment below -1; a result left with only known
- *  hallucinations is empty. Measured on 2026-09-25: real speech averages -0.11 to -0.34 per chunk, its worst segment
- *  -1.38 at ratio 2.09; the music loops seen score -1.13 at 2.40. */
-async function whisper(env: Env, audio: Uint8Array, debug = false): Promise<Heard> {
-  const body = b64(audio);
+// When the voice activity detection keeps under 1 s of audio, the audio is heard a second time without it: Whisper's VAD
+// (Silero) misses speech under loud game sound, gunfire or music (2103613540166664192, a 5-minute game video: VAD 0 s,
+// while the voices say "Reload!", "Get to the chopper!", "Rescue 7 affirmative"). That second result is kept only when
+// it is clearly speech: at least FALLBACK_MIN_SEGMENTS segments and FALLBACK_MIN_WORDS words (what radar.speech needs
+// to send a transcript to the classifier) after the filters below, not one phrase looping. On silence and music it is
+// one or two invented lines ("Thank you.", "We'll be right back.", "This video is brought to you by…"), so those videos
+// stay no_speech. condition_on_previous_text is off for it, since conditioning makes Whisper loop on one line there.
+const FALLBACK_MIN_SEGMENTS = 3, FALLBACK_MIN_WORDS = 15;
+
+async function runWhisper(env: Env, input: Record<string, unknown>): Promise<any> {
   let last = "";
   for (let i = 0; i < CALL_TRIES; i++) {
-    let out: any;
     try {
-      out = await env.AI.run(env.WHISPER_MODEL as any, { audio: body, vad_filter: true } as any);
+      return await env.AI.run(env.WHISPER_MODEL as any, input as any);
     } catch (e: any) {
       last = String(e?.message || e).slice(0, 120);
       if (BUDGET.test(last)) throw new Deferred(`whisper: ${last}`);
       if (i < CALL_TRIES - 1) await sleep(2000 * 4 ** i);
-      continue;
     }
-    const info = out?.transcription_info || {};
-    const speech = typeof info.duration_after_vad === "number" ? info.duration_after_vad : null;
-    const segs: any[] = Array.isArray(out?.segments) ? out.segments : [];
-    let removed = 0, text: string;
-    if (segs.length) {
-      const kept = segs.filter(s => {
-        const lp = Number(s.avg_logprob), cr = Number(s.compression_ratio);
-        const bad = (Number(s.no_speech_prob) > 0.6 && lp < -1) || cr > 2.4 || (lp < -1 && cr > 2.2) || lp < -2;
-        if (bad) removed++;
-        return !bad;
-      });
-      text = kept.map(s => String(s.text || "")).join(" ");
-      // a few words, every segment written at low confidence: what Whisper invents over music (e.g. "I love you." twice
-      // at -1.62, or 23 words at -1.51/-1.04, over a song that whisper.cpp hears as [MUSIC PLAYING]). Real speech scores
-      // -0.1 to -0.35 on average; its worst segments reach about -1.4, never all of them in a short chunk.
-      if (kept.length && kept.every(s => Number(s.avg_logprob) < -1) && text.split(/\s+/).filter(Boolean).length < 60) { removed += kept.length; text = ""; }
-    } else text = String(out?.text ?? "");
-    text = text.split(/\s+/).filter(Boolean).join(" ");
-    if (text && hallucinated(text)) { removed++; text = ""; }
-    return { text, speech, removed, ...(debug ? { segments: segs.map(s => ({ start: s.start, end: s.end, text: s.text, avg_logprob: s.avg_logprob,
-      no_speech_prob: s.no_speech_prob, compression_ratio: s.compression_ratio })), info } : {}) };
   }
   throw new Transient(`whisper: ${last}`);
+}
+
+/** Text of one Whisper result after the filters. Segments Whisper itself rates as probably not speech (no_speech_prob >
+ *  0.6 with avg_logprob < -1, its own rule; Workers AI reports no_speech_prob 0), as looping text (compression_ratio >
+ *  2.4), as a low-confidence loop (avg_logprob < -1 with compression_ratio > 2.2: e.g. one sentence repeated over a song)
+ *  or as a guess (avg_logprob < -2) are dropped, and so is a chunk left with under 60 words, every segment below -1; a
+ *  result left with only known hallucinations is empty. Measured on 2026-09-25: real speech averages -0.11 to -0.34 per
+ *  chunk, its worst segment -1.38 at ratio 2.09; the music loops seen score -1.13 at 2.40. */
+function filtered(out: any): { text: string; removed: number; kept: number } {
+  const segs: any[] = Array.isArray(out?.segments) ? out.segments : [];
+  let removed = 0, text: string, kept = 0;
+  if (segs.length) {
+    const good = segs.filter(s => {
+      const lp = Number(s.avg_logprob), cr = Number(s.compression_ratio);
+      const bad = (Number(s.no_speech_prob) > 0.6 && lp < -1) || cr > 2.4 || (lp < -1 && cr > 2.2) || lp < -2;
+      if (bad) removed++;
+      return !bad;
+    });
+    text = good.map(s => String(s.text || "")).join(" ");
+    kept = good.length;
+    // a few words, every segment written at low confidence: what Whisper invents over music (e.g. "I love you." twice
+    // at -1.62, or 23 words at -1.51/-1.04, over a song that whisper.cpp hears as [MUSIC PLAYING]). Real speech scores
+    // -0.1 to -0.35 on average; its worst segments reach about -1.4, never all of them in a short chunk.
+    if (good.length && good.every(s => Number(s.avg_logprob) < -1) && text.split(/\s+/).filter(Boolean).length < 60) { removed += good.length; text = ""; kept = 0; }
+  } else { text = String(out?.text ?? ""); kept = text.trim() ? 1 : 0; }
+  text = text.split(/\s+/).filter(Boolean).join(" ");
+  if (text && hallucinated(text)) { removed++; text = ""; kept = 0; }
+  return { text, removed, kept };
+}
+
+const debugSegs = (out: any) => ((Array.isArray(out?.segments) ? out.segments : []) as any[]).map(s => ({ start: s.start, end: s.end, text: s.text,
+  avg_logprob: s.avg_logprob, no_speech_prob: s.no_speech_prob, compression_ratio: s.compression_ratio }));
+
+/** One Whisper request with retries (Workers AI sometimes answers "3030: Failed to decode audio file" for audio it
+ *  decodes on the next try, so no error is taken as a property of the video), then the no-VAD second hearing above. */
+async function whisper(env: Env, audio: Uint8Array, debug = false): Promise<Heard> {
+  const body = b64(audio);
+  const out = await runWhisper(env, { audio: body, vad_filter: true });
+  const info = out?.transcription_info || {};
+  const speech = typeof info.duration_after_vad === "number" ? info.duration_after_vad : null;
+  const f = filtered(out);
+  const dbg = debug ? { segments: debugSegs(out), info } : {};
+  if (f.text || speech === null || speech >= 1) return { text: f.text, speech, removed: f.removed, ...dbg };
+  const out2 = await runWhisper(env, { audio: body, vad_filter: false, condition_on_previous_text: false });
+  const g = filtered(out2);
+  const words = g.text.split(" ").filter(Boolean);
+  const clear = g.kept >= FALLBACK_MIN_SEGMENTS && words.length >= FALLBACK_MIN_WORDS && new Set(words.map(w => w.toLowerCase())).size / words.length > 0.25;
+  const dbg2 = debug ? { segments: debugSegs(out2), info: { vad: info, novad: out2?.transcription_info } } : {};
+  if (clear) return { text: g.text, speech: null, removed: g.removed, novad: true, ...dbg2 };
+  return { text: "", speech, removed: f.removed + (g.text ? 1 : 0), ...dbg2 };
 }
 
 const concat = (parts: Uint8Array[]) => {
@@ -198,9 +226,9 @@ async function viaHls(env: Env, master: string, debug = false): Promise<Outcome>
 /** The outcome of a transcription: text, or a proven empty result (no_speech), or a Transient error. */
 function outcome(text: string, heard: Heard[], o: { seconds: number; chunks: number; source: "hls" | "mp4" }): Outcome {
   const segments = heard.some(h => h.segments) ? heard.flatMap(h => h.segments || []) : undefined;
-  if (text) return { text, status: "ok", detail: `${o.chunks} chunk(s)${heard.some(h => h.removed) ? ", non-speech segments removed" : ""}`, ...o, segments };
+  if (text) return { text, status: "ok", detail: `${o.chunks} chunk(s)${heard.some(h => h.novad) ? ", speech found without VAD" : ""}${heard.some(h => h.removed) ? ", non-speech segments removed" : ""}`, ...o, segments };
   const speech = heard.every(h => h.speech !== null) ? heard.reduce((a, h) => a + (h.speech || 0), 0) : null;
-  if (speech !== null && speech < 1) return { text: "", status: "no_speech", detail: "voice activity detection found no speech", ...o, segments };
+  if (speech !== null && speech < 1) return { text: "", status: "no_speech", detail: "voice activity detection found no speech, and the audio heard without it has no clear speech", ...o, segments };
   if (heard.some(h => h.removed)) return { text: "", status: "no_speech", detail: "Whisper heard only non-speech hallucinations (music or noise)", ...o, segments };
   throw new Transient("empty transcript with speech detected");
 }

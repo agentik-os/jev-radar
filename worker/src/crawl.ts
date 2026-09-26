@@ -1,7 +1,7 @@
 // Incremental crawl of the tracked X posts, ported from pipeline/crawl.py and pipeline/replies.py.
 // State lives in D1; each function below is one Workflow step and is safe to retry (upserts only).
 import { Env, Mode, chunks, now as nowS, pool } from "./env";
-import { FxStats, addFx, fxStats, getJson } from "./fx";
+import { FxStats, addFx, fetchJson, fxStats, getJson } from "./fx";
 import { LAUNCH, Raw, isTracked, links, smallMp4 } from "./radar";
 import SEEDS from "./config/seeds.json";
 
@@ -61,7 +61,7 @@ async function keepArticleBodies(db: D1Database, posts: Raw[]): Promise<number> 
 /** fxtwitter's status endpoints return a long post (an X "note") cut to its first ~280 characters, while timelines return
  *  the whole text. A cut copy (refresh of the most viewed posts, linked statuses) must never replace a stored full text:
  *  the text feeds the classification key, so the post would flip between two keys, and two sets of answers, depending on
- *  which endpoint read it last. Mutates `t`; returns how many texts were kept. */
+ *  which endpoint read it last. Mutates `t`; returns how many texts (post, quote) were kept. */
 export function keepFullText(t: Raw, old: Raw): number {
   const cut = (a: any, b: any) => !!a && !!b && typeof a.text === "string" && typeof b.text === "string" && a.text.length > 0
     && b.text.length > a.text.length && b.text.startsWith(a.text.replace(/[\s\u2026]+$/, ""));
@@ -70,6 +70,12 @@ export function keepFullText(t: Raw, old: Raw): number {
   if (t.quote && old.quote && String(t.quote.id) === String(old.quote.id) && cut(t.quote, old.quote)) {
     t.quote.text = old.quote.text; t.quote.raw_text = old.quote.raw_text; n++;
   }
+  // The quoted post comes and goes between reads: fxtwitter sometimes returns it as a bare link (no text) or not at all
+  // (it could not load it then, or it was deleted since). The quote's text feeds the classification key as well, so a copy
+  // without it must never replace a stored copy with it, or the post flips between two keys (2103299947345133898 on
+  // 2026-09-26: bare quote, about_jev 0.54, then the full quote, 0.33).
+  const quoteText = (q: any) => !!q && typeof q.text === "string" && q.text.length > 0;
+  if (quoteText(old.quote) && !quoteText(t.quote) && (!t.quote || !t.quote.id || String(t.quote.id) === String(old.quote.id))) { t.quote = old.quote; n++; }
   return n;
 }
 
@@ -205,25 +211,36 @@ export function interleave<T>(a: T[], b: T[], per: number): { a: T; rot: boolean
   return out;
 }
 
-async function timeline([handle, since, maxPages]: Job, fx?: FxStats): Promise<{ handle: string; found: Raw[]; ok: boolean; pages: number }> {
+type Answer = "ok" | "gone" | "empty" | "throttled";
+
+/** One account's timeline. `answer` is how the first page ended: "ok", "gone" (4xx), "empty" (no posts) or "throttled"
+ *  (429/5xx/timeouts on every retry); `partial` is set when a later page was throttled, so older posts may be missing. */
+async function timeline([handle, since, maxPages]: Job, fx?: FxStats): Promise<{ handle: string; found: Raw[]; ok: boolean; pages: number; answer: Answer; partial: boolean }> {
   const base = `https://api.fxtwitter.com/2/profile/${handle}/statuses`;
-  let cursor: string | null = null, ok = false, pages = 0;
+  let cursor: string | null = null, ok = false, pages = 0, partial = false;
+  let answer: Answer = "empty";
   const found: Raw[] = [];
   for (let page = 0; page < maxPages; page++) {
-    const d = await getJson(base + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""), fx);
+    const { d, kind } = await fetchJson(base + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""), fx);
+    if (kind !== "ok") {
+      if (page === 0) answer = kind === "gone" ? "gone" : "throttled";
+      else if (kind === "transient") partial = true;
+      break;
+    }
     if (!d || !d.results || !d.results.length) break;
+    if (page === 0) answer = "ok";
     ok = true; pages++;
     for (const t of d.results) if (isTracked(t)) found.push(t);
     cursor = (d.cursor || {}).bottom || null;
     // the first result can be an old pinned post
     if (!cursor || d.results.slice(1).every((t: Raw) => (t.created_timestamp || 0) < since)) break;
   }
-  return { handle, found, ok, pages };
+  return { handle, found, ok, pages, answer, partial };
 }
 
 /** Step: read a slice of the round's timelines. Returns the statuses they link to (next round). */
 export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: number):
-    Promise<{ added: number; pending: Pair[]; failed: number; t: number; authors: string[]; pages: number; fx: FxStats }> {
+    Promise<{ added: number; pending: Pair[]; failed: number; throttled: number; partial: number; t: number; authors: string[]; pages: number; fx: FxStats }> {
   const db = env.DB;
   const fx = fxStats();
   const res = await pool(jobs, FX_PARALLEL, j => timeline(j, fx));
@@ -231,12 +248,17 @@ export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: numb
   const handles: string[] = [];
   const pend = new Map<string, Pair>();
   const stmts: D1PreparedStatement[] = [];
-  let failed = 0;
+  let failed = 0, throttled = 0, partial = 0;
   for (const r of res) {
     const k = r.handle.toLowerCase();
-    // a fast pass does not push back the next full read of a known account
-    // (and only writes when the failure flag or a first check changes something)
-    stmts.push(mode === "fast"
+    // Throttling (429, 5xx, timeouts on every retry) says nothing about the account: nothing is written, so a new account
+    // stays new and a known one keeps its last_checked (its next read goes back to it less OVERLAP; no post is lost). A read
+    // cut short by throttling clears the failure flag but does not move last_checked.
+    if (r.answer === "throttled") { throttled++; continue; }
+    if (r.partial) {
+      partial++;
+      stmts.push(db.prepare("UPDATE accounts SET failed = 0 WHERE k = ? AND failed != 0").bind(k));
+    } else stmts.push(mode === "fast"
       ? db.prepare("UPDATE accounts SET failed = ?1, last_checked = CASE WHEN last_checked = 0 THEN ?2 ELSE last_checked END WHERE k = ?3 AND (failed != ?1 OR last_checked = 0)").bind(r.ok ? 0 : 1, now, k)
       : db.prepare("UPDATE accounts SET failed = ?, last_checked = ? WHERE k = ?").bind(r.ok ? 0 : 1, now, k));
     if (!r.ok) failed++;
@@ -251,7 +273,7 @@ export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: numb
   const authors = new Set<string>();
   const added = await upsertPosts(db, found, authors);
   await addAccounts(db, handles);
-  return { added, pending: [...pend.values()].slice(0, 15000), failed, t: Date.now(), authors: [...authors], pages: res.reduce((a, r) => a + r.pages, 0), fx };
+  return { added, pending: [...pend.values()].slice(0, 15000), failed, throttled, partial, t: Date.now(), authors: [...authors], pages: res.reduce((a, r) => a + r.pages, 0), fx };
 }
 
 /** Step (full pass, every 6 h): refresh the metrics of the most viewed posts. */

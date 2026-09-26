@@ -128,8 +128,8 @@
   "en": "Two-brain Minecraft: System One makes the fast decisions (fight, flee) while GPT-6 Astra plans ahead. They fight several zombies at once."
  },
  "2100864907046768890": {
-  "fr": "« System One Use » pour Codex (Chine) : System One sert de couche de décision qui dit à Codex quoi faire à l'écran. Comparaison vidéo sur l'ajout d'un événement au calendrier Mac.",
-  "en": "'System One Use' for Codex (China): System One is the decision layer telling Codex what to do on screen. Side-by-side video on adding a Mac calendar event."
+  "fr": "Pilotage d'ordinateur pour Codex (Chine) : System One sert de couche de décision qui dit à Codex quoi faire à l'écran. Comparaison vidéo sur l'ajout d'un événement au calendrier Mac.",
+  "en": "Computer use for Codex (China): System One is the decision layer telling Codex what to do on screen. Side-by-side video on adding a Mac calendar event."
  },
  "2100335978229690683": {
   "fr": "Pilotage de drone : l'état du drone est envoyé à System One, qui choisit la manœuvre suivante. Fait en 15 min pour 10 centimes. Code : github.com/RomanSlack/jev-drone.",
