@@ -221,7 +221,7 @@ async function timeline([handle, since, maxPages]: Job, fx?: FxStats): Promise<{
   let answer: Answer = "empty";
   const found: Raw[] = [];
   for (let page = 0; page < maxPages; page++) {
-    const { d, kind } = await fetchJson(base + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""), fx);
+    const { d, kind } = await fetchJson(base + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""), fx, 4, page === 0);
     if (kind !== "ok") {
       if (page === 0) answer = kind === "gone" ? "gone" : "throttled";
       else if (kind === "transient") partial = true;

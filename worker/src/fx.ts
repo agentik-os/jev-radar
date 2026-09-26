@@ -15,10 +15,13 @@ export function addFx(a: FxStats, b: FxStats) {
 }
 
 /** How a request ended: "ok" (2xx, body parsed), "gone" (400/401/403/404: fxtwitter's answer about the account or post,
- *  which it also gives for a live account now and then) or "transient" (429, 5xx, timeout or network error on every try). */
+ *  which it also gives for a live account now and then) or "transient" (429, 5xx, timeout or network error on every try).
+ *  `again404`: ask once more after a 404 before taking it as the answer (fxtwitter answers 404 to a few percent of the
+ *  timeline reads of live accounts from a Worker; a profile read asks twice). */
 export type FxKind = "ok" | "gone" | "transient";
 
-export async function fetchJson(url: string, st?: FxStats, tries = 4): Promise<{ d: any | null; kind: FxKind }> {
+export async function fetchJson(url: string, st?: FxStats, tries = 4, again404 = false): Promise<{ d: any | null; kind: FxKind }> {
+  let asked404 = false;
   for (let i = 0; i < tries; i++) {
     fxCalls++;
     if (st) st.calls++;
@@ -26,6 +29,11 @@ export async function fetchJson(url: string, st?: FxStats, tries = 4): Promise<{
     let why = "";
     try {
       const r = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(30_000) });
+      if (r.status === 404 && again404 && !asked404) {
+        asked404 = true; await r.body?.cancel();
+        if (st) { st.wait_ms += Date.now() - t0; st.retried["404"] = (st.retried["404"] || 0) + 1; st.backoff_ms += 3000; }
+        await sleep(3000); i--; continue;
+      }
       if ([400, 401, 403, 404].includes(r.status)) { await r.body?.cancel(); if (st) st.wait_ms += Date.now() - t0; return { d: null, kind: "gone" }; }
       if (r.ok) { const d = await r.json(); if (st) st.wait_ms += Date.now() - t0; return { d, kind: "ok" }; }
       why = String(r.status);
