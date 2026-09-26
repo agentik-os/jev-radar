@@ -221,7 +221,14 @@ async function timeline([handle, since, maxPages]: Job, fx?: FxStats): Promise<{
   let answer: Answer = "empty";
   const found: Raw[] = [];
   for (let page = 0; page < maxPages; page++) {
-    const { d, kind } = await fetchJson(base + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""), fx, 4, page === 0);
+    const url = base + (cursor ? "?cursor=" + encodeURIComponent(cursor) : "");
+    let { d, kind } = await fetchJson(url, fx, 4, page === 0);
+    if (page === 0 && kind === "ok" && !(d && d.results && d.results.length)) {
+      // an empty first page is asked once more too: fxtwitter returns it now and then for live accounts (Reuters, binance)
+      if (fx) { fx.retried.empty = (fx.retried.empty || 0) + 1; fx.backoff_ms += 3000; }
+      await new Promise(res => setTimeout(res, 3000));
+      ({ d, kind } = await fetchJson(url, fx, 4, true));
+    }
     if (kind !== "ok") {
       if (page === 0) answer = kind === "gone" ? "gone" : "throttled";
       else if (kind === "transient") partial = true;
