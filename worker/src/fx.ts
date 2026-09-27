@@ -54,7 +54,8 @@ export async function getJson(url: string, st?: FxStats, tries = 4): Promise<any
  *  Since 2026-09-26 23:00 UTC fxtwitter answers 404 for live accounts on a share of the requests to every endpoint, with
  *  the same body, headers and about the same timing as a real 404, sometimes several in a row (2026-09-27 12:55 UTC: 33 %
  *  of timeline reads, 21 % of `/2/profile` reads, 12 % of `/<handle>` reads of live accounts); an account that is really
- *  gone or renamed answers 404 on every one. */
+ *  gone or renamed answers 404 on every one. A timeline that answers 200 with no posts proves the account exists (probes at
+ *  12:55 and 14:18 UTC: 22 such answers, all from 12 accounts whose profile was also found; none from the 59 gone ones). */
 export interface Look { tl: "posts" | "empty" | "404" | "other"; pr: ("user" | "404" | "other")[] }
 
 const PROFILE = [(h: string) => `https://api.fxtwitter.com/2/profile/${h}`, (h: string) => `https://api.fxtwitter.com/${h}`,
@@ -64,7 +65,7 @@ export async function lookAgain(handle: string, st?: FxStats, gapMs = 3000): Pro
   const t = await fetchJson(`https://api.fxtwitter.com/2/profile/${handle}/statuses`, st, 4);
   const tl: Look["tl"] = t.kind === "ok" ? ((t.d?.results || []).length ? "posts" : "empty") : t.status === 404 ? "404" : "other";
   const pr: Look["pr"] = [];
-  if (tl === "posts") return { tl, pr };
+  if (tl === "posts" || tl === "empty") return { tl, pr }; // a 200 timeline, even empty, proves the account exists
   for (let i = 0; i < PROFILE.length; i++) {
     if (i) await sleep(gapMs);
     const p = await fetchJson(PROFILE[i](handle), st, 4);
@@ -78,7 +79,7 @@ export async function lookAgain(handle: string, st?: FxStats, gapMs = 3000): Pro
  *  "gone": the timeline has nothing (404 or empty) and all three profile reads answer 404. Anything else is "unsure" and
  *  counts like throttling. */
 export function verdict(l: Look): "live" | "gone" | "unsure" {
-  if (l.tl === "posts" || l.pr.includes("user")) return "live";
-  if ((l.tl === "404" || l.tl === "empty") && l.pr.length >= PROFILE.length && l.pr.every(x => x === "404")) return "gone";
+  if (l.tl === "posts" || l.tl === "empty" || l.pr.includes("user")) return "live";
+  if (l.tl === "404" && l.pr.length >= PROFILE.length && l.pr.every(x => x === "404")) return "gone";
   return "unsure";
 }

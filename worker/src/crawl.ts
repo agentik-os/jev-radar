@@ -1,7 +1,7 @@
 // Incremental crawl of the tracked X posts, ported from pipeline/crawl.py and pipeline/replies.py.
 // State lives in D1; each function below is one Workflow step and is safe to retry (upserts only).
 import { Env, Mode, chunks, now as nowS, pool } from "./env";
-import { FxStats, addFx, fetchJson, fxStats, getJson, lookAgain, verdict } from "./fx";
+import { FxStats, Look, addFx, fetchJson, fxStats, getJson, lookAgain, verdict } from "./fx";
 import { LAUNCH, Raw, isTracked, links, smallMp4 } from "./radar";
 import SEEDS from "./config/seeds.json";
 
@@ -282,7 +282,8 @@ export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: numb
     }
   }
   const confirm = { suspects: suspects.length, live: 0, gone: 0, unsure: 0, sample: [] as string[] };
-  const looks = await pool(suspects, FX_PARALLEL, s => lookAgain(s.handle, fx));
+  // a first read that answered 200 with an empty timeline already proves the account exists: no second look is needed
+  const looks = await pool(suspects, FX_PARALLEL, s => s.first === "empty" ? Promise.resolve<Look>({ tl: "empty", pr: [] }) : lookAgain(s.handle, fx));
   suspects.forEach((s, i) => {
     const k = s.handle.toLowerCase(), l = looks[i], v = verdict(l);
     confirm[v]++;

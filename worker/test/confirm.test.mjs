@@ -35,7 +35,7 @@ const w = (db, k) => db.writes.filter(s => s.args.includes(k)).map(s => ({ sql: 
 test("verdict is the radars' rule", () => {
   assert.equal(fx.verdict({ tl: "404", pr: ["user"] }), "live");
   assert.equal(fx.verdict({ tl: "404", pr: ["404", "404", "404"] }), "gone");
-  assert.equal(fx.verdict({ tl: "empty", pr: ["404", "404", "404"] }), "gone");
+  assert.equal(fx.verdict({ tl: "empty", pr: ["404", "404", "404"] }), "live"); // a 200 timeline proves the account exists
   assert.equal(fx.verdict({ tl: "404", pr: ["404", "404"] }), "unsure");
   assert.equal(fx.verdict({ tl: "404", pr: ["404", "other"] }), "unsure");
 });
@@ -46,9 +46,13 @@ test("the look reads /2/profile, then /<handle>, then /2/profile, and stops at t
   assert.deepEqual(await fx.lookAgain("renamed", undefined, 0), { tl: "404", pr: ["404", "404", "404"] });
   assert.deepEqual(calls, [TL("renamed"), PR("renamed"), V1("renamed"), PR("renamed")]);
   const c2 = [];
-  fakeFx({ [TL("makerio_io")]: [[200, { code: 200, results: [] }]], [PR("makerio_io")]: [[404, NF]], [V1("makerio_io")]: [[200, { code: 200, user: { screen_name: "makerio_io" } }]] }, c2);
-  assert.deepEqual(await fx.lookAgain("makerio_io", undefined, 0), { tl: "empty", pr: ["404", "user"] });
+  fakeFx({ [TL("makerio_io")]: [[404, { code: 404 }]], [PR("makerio_io")]: [[404, NF]], [V1("makerio_io")]: [[200, { code: 200, user: { screen_name: "makerio_io" } }]] }, c2);
+  assert.deepEqual(await fx.lookAgain("makerio_io", undefined, 0), { tl: "404", pr: ["404", "user"] });
   assert.equal(c2.length, 3);
+  const c3 = [];
+  fakeFx({ [TL("quiet")]: [[200, { code: 200, results: [] }]] }, c3);
+  assert.deepEqual(await fx.lookAgain("quiet", undefined, 0), { tl: "empty", pr: [] });
+  assert.equal(c3.length, 1);
 });
 
 for (const mode of ["full", "fast"]) {
@@ -73,6 +77,13 @@ for (const mode of ["full", "fast"]) {
     await crawl.readTimelines({ DB: db }, mode, [["quiet", 0, 1]], 1000);
     const x = w(db, "quiet");
     assert.equal(x.length, 1); assert.equal(x[0].args[0], 0);
+  });
+  test(`${mode}: an empty 200 timeline is not a failure even when every profile read answers 404`, async () => {
+    fakeFx({ [TL("feagine")]: [[200, { code: 200, results: [] }]], [PR("feagine")]: [[404, NF]], [V1("feagine")]: [[404, NF]] });
+    const db = fakeDb();
+    const r = await crawl.readTimelines({ DB: db }, mode, [["feagine", 0, 1]], 1000);
+    const x = w(db, "feagine");
+    assert.equal(x.length, 1); assert.equal(x[0].args[0], 0); assert.equal(r.confirm.live, 1); assert.equal(r.confirm.gone, 0);
   });
   test(`${mode}: unsure writes nothing`, async () => {
     fakeFx({ [TL("u1")]: [[404, { code: 404, results: [] }]], [PR("u1")]: [[404, NF], [503, {}]] });
