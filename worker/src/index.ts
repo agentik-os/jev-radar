@@ -7,7 +7,7 @@ import { DATA_FILES } from "./build";
 import { getJson } from "./fx";
 import { AiClient } from "./ai";
 import { Outcome, PendingVideo, hlsUrl, record, transcribeOne } from "./transcribe";
-import { acquire, releaseLease } from "./lease";
+import { acquire, openRunVerdict, passStatus, releaseLease } from "./lease";
 
 export { RadarPass } from "./workflow";
 
@@ -40,7 +40,6 @@ async function fullOwed(env: Env, t: number): Promise<string | null> {
 }
 
 const passId = (mode: string, t: number, suffix = "") => `${mode}-${new Date(t * 1000).toISOString().slice(0, 16).replace(/[-:T]/g, "")}-${crypto.randomUUID().slice(0, 4)}${suffix}`;
-const ACTIVE = ["queued", "running", "waiting", "paused", "waitingForPause"];
 
 /** Starts a pass unless one of the same mode is still running. Full and fast passes hold separate leases: a fast pass
  *  (a few minutes, then publish) runs while a full pass crawls for most of an hour, so the site keeps publishing. The
@@ -49,8 +48,7 @@ const ACTIVE = ["queued", "running", "waiting", "paused", "waitingForPause"];
 export async function startPass(env: Env, mode: Mode, trigger: string): Promise<{ id?: string; mode?: Mode; skipped?: string }> {
   const t = nowS();
   const id = passId(mode, t);
-  const status = async (runId: string) => { const inst = await env.RADAR_PASS.get(runId).catch(() => null);
-    return inst ? String((await inst.status().catch(() => ({ status: "unknown" }))).status) : "unknown"; };
+  const status = (runId: string) => passStatus(env.RADAR_PASS, runId); // "not-found" and "error" are told apart (lease.ts)
   const skip = async (reason: string) => {
     if (trigger !== "manual") await env.DB.prepare("INSERT OR IGNORE INTO runs(id, mode, trigger, started, finished, status, error) VALUES (?,?,?,?,?, 'skipped', ?)")
       .bind(passId(mode, t, "-skip"), mode, trigger, t, t, reason).run();
@@ -59,12 +57,16 @@ export async function startPass(env: Env, mode: Mode, trigger: string): Promise<
   const held = await acquire(env.DB, "agk", mode as "full" | "fast", id, t, status);
   if (held) return skip(held);
   // a pass started before the lease existed (round 3 deploy) holds none: the runs table still covers it
-  const open = (await env.DB.prepare("SELECT id FROM runs WHERE status = 'running' AND mode = ? AND started > ? AND id != ? ORDER BY started DESC")
-    .bind(mode, t - 24 * 3600, id).all<{ id: string }>()).results;
+  // (and the run of a lease just taken over). It is closed only when its pass has ended or run past its timeout: a
+  // status read error never marks a live pass failed (openRunVerdict).
+  const open = (await env.DB.prepare("SELECT id, started FROM runs WHERE status = 'running' AND mode = ? AND started > ? AND id != ? ORDER BY started DESC")
+    .bind(mode, t - 24 * 3600, id).all<{ id: string; started: number }>()).results;
   for (const busy of open) {
     const st = await status(busy.id);
-    if (ACTIVE.includes(st)) { await releaseLease(env.DB, "agk", mode, id).run(); return skip(`pass running: ${busy.id} (${st})`); }
-    await env.DB.prepare("UPDATE runs SET status = ? WHERE id = ? AND status = 'running'").bind(st === "complete" ? "complete" : "failed", busy.id).run();
+    const v = openRunVerdict(st, t - busy.started, mode as "full" | "fast");
+    if (!v) { await releaseLease(env.DB, "agk", mode, id).run(); return skip(`pass running: ${busy.id} (${st})`); }
+    if (v.terminate) await env.RADAR_PASS.get(busy.id).then(i => i.terminate()).catch(e => console.warn(`terminate ${busy.id}: ${e?.message || e}`));
+    await env.DB.prepare("UPDATE runs SET status = ?, error = COALESCE(error, ?) WHERE id = ? AND status = 'running'").bind(v.close, v.error, busy.id).run();
   }
   // the run row is written before the instance exists, so a cron firing a moment later already sees this pass
   await env.DB.prepare("INSERT OR IGNORE INTO runs(id, mode, trigger, started, status) VALUES (?,?,?,?, 'running')").bind(id, mode, trigger, t).run();

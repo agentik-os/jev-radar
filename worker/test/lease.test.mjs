@@ -25,7 +25,7 @@ function d1() {
 }
 function workflows(st = {}) {
   const created = [];
-  return { created, binding: { async create({ id }) { created.push(id); }, async get(id) { if (!created.includes(id) && !(id in st)) throw new Error("not found");
+  return { created, binding: { async create({ id }) { created.push(id); }, async get(id) { if (!created.includes(id) && !(id in st)) throw new Error("(instance.not_found) Instance not found");
     return { status: async () => ({ status: st[id] ?? "running" }) }; } } };
 }
 
@@ -54,7 +54,7 @@ test("a released, ended or expired lease is free; a young one with no instance y
   assert.ok((await index.startPass(env, "full", "manual")).id);
   const T = 1790600000;
   raw.prepare("DELETE FROM pass_lease").run();
-  assert.equal(await lease.acquire(DB, "agk", "full", "a", T, async () => "unknown"), null);
-  assert.equal(await lease.acquire(DB, "agk", "full", "b", T + 60, async () => "unknown"), "pass running: a (unknown)");
+  assert.equal(await lease.acquire(DB, "agk", "full", "a", T, async () => "not-found"), null);
+  assert.equal(await lease.acquire(DB, "agk", "full", "b", T + 60, async () => "not-found"), "pass running: a (not-found)");
   assert.equal(await lease.acquire(DB, "agk", "full", "c", T + lease.LEASE_TTL.full, async () => "running"), null, "expired");
 });
