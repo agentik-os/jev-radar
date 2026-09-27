@@ -11,6 +11,7 @@ import { LONG_VIDEO, pendingVideos, transcribeSlice } from "./transcribe";
 import { buildAndPublish } from "./build";
 import { FxStats, addFx, fxStats } from "./fx";
 import { PassMeter, withMeter } from "./meter";
+import { releaseLease } from "./lease";
 
 const STEP = { retries: { limit: 3, delay: "15 seconds" as const, backoff: "exponential" as const }, timeout: "20 minutes" as const };
 const TIMELINE_SLICE = 150;
@@ -124,6 +125,7 @@ export class RadarPass extends WorkflowEntrypoint<Env, PassParams> {
       stats.d1 = pm.toJSON();
       await step.do("finish", async () => {
         await env.DB.prepare("UPDATE runs SET status = 'complete', finished = ?, stats = ? WHERE id = ?").bind(nowS(), JSON.stringify(stats), id).run();
+        await releaseLease(env.DB, "agk", mode, id).run(); // the next firing of this mode may start a pass (lease.ts)
       });
       return stats;
     } catch (e: any) {
@@ -131,6 +133,7 @@ export class RadarPass extends WorkflowEntrypoint<Env, PassParams> {
       await step.do("fail", async () => {
         await env.DB.prepare("UPDATE runs SET status = 'failed', finished = ?, stats = ?, error = ? WHERE id = ?")
           .bind(nowS(), JSON.stringify(stats), String(e?.message || e).slice(0, 500), id).run();
+        await releaseLease(env.DB, "agk", mode, id).run();
       });
       throw e;
     }

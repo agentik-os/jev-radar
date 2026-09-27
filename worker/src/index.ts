@@ -7,6 +7,7 @@ import { DATA_FILES } from "./build";
 import { getJson } from "./fx";
 import { AiClient } from "./ai";
 import { Outcome, PendingVideo, hlsUrl, record, transcribeOne } from "./transcribe";
+import { acquire, releaseLease } from "./lease";
 
 export { RadarPass } from "./workflow";
 
@@ -42,31 +43,36 @@ const passId = (mode: string, t: number, suffix = "") => `${mode}-${new Date(t *
 const ACTIVE = ["queued", "running", "waiting", "paused", "waitingForPause"];
 
 /** Starts a pass unless one of the same mode is still running. Full and fast passes hold separate leases: a fast pass
- *  (a few minutes, then publish) runs while a full pass crawls for most of an hour, so the site keeps publishing.
- *  A skipped firing is written to the run log ("covered by" the pass of the same mode that is running). */
+ *  (a few minutes, then publish) runs while a full pass crawls for most of an hour, so the site keeps publishing. The
+ *  lease is a D1 row taken in one atomic statement (lease.ts), so two firings of the same minute cannot both start a pass.
+ *  A skipped firing is written to the run log as "pass running: <run id> (<status>)". */
 export async function startPass(env: Env, mode: Mode, trigger: string): Promise<{ id?: string; mode?: Mode; skipped?: string }> {
   const t = nowS();
-  // the Workflow status of every pass of this mode still marked running is authoritative
-  const open = (await env.DB.prepare("SELECT id FROM runs WHERE status = 'running' AND mode = ? AND started > ? ORDER BY started DESC")
-    .bind(mode, t - 24 * 3600).all<{ id: string }>()).results;
+  const id = passId(mode, t);
+  const status = async (runId: string) => { const inst = await env.RADAR_PASS.get(runId).catch(() => null);
+    return inst ? String((await inst.status().catch(() => ({ status: "unknown" }))).status) : "unknown"; };
+  const skip = async (reason: string) => {
+    if (trigger !== "manual") await env.DB.prepare("INSERT OR IGNORE INTO runs(id, mode, trigger, started, finished, status, error) VALUES (?,?,?,?,?, 'skipped', ?)")
+      .bind(passId(mode, t, "-skip"), mode, trigger, t, t, reason).run();
+    return { skipped: reason };
+  };
+  const held = await acquire(env.DB, "agk", mode as "full" | "fast", id, t, status);
+  if (held) return skip(held);
+  // a pass started before the lease existed (round 3 deploy) holds none: the runs table still covers it
+  const open = (await env.DB.prepare("SELECT id FROM runs WHERE status = 'running' AND mode = ? AND started > ? AND id != ? ORDER BY started DESC")
+    .bind(mode, t - 24 * 3600, id).all<{ id: string }>()).results;
   for (const busy of open) {
-    const inst = await env.RADAR_PASS.get(busy.id).catch(() => null);
-    const st = inst ? (await inst.status().catch(() => ({ status: "unknown" }))).status : "unknown";
-    if (ACTIVE.includes(st)) {
-      const reason = `covered by ${mode} pass ${busy.id} (${st})`;
-      if (trigger !== "manual") await env.DB.prepare("INSERT OR IGNORE INTO runs(id, mode, trigger, started, finished, status, error) VALUES (?,?,?,?,?, 'skipped', ?)")
-        .bind(passId(mode, t, "-skip"), mode, trigger, t, t, reason).run();
-      return { skipped: reason };
-    }
+    const st = await status(busy.id);
+    if (ACTIVE.includes(st)) { await releaseLease(env.DB, "agk", mode, id).run(); return skip(`pass running: ${busy.id} (${st})`); }
     await env.DB.prepare("UPDATE runs SET status = ? WHERE id = ? AND status = 'running'").bind(st === "complete" ? "complete" : "failed", busy.id).run();
   }
-  const id = passId(mode, t);
   // the run row is written before the instance exists, so a cron firing a moment later already sees this pass
   await env.DB.prepare("INSERT OR IGNORE INTO runs(id, mode, trigger, started, status) VALUES (?,?,?,?, 'running')").bind(id, mode, trigger, t).run();
   try {
     await env.RADAR_PASS.create({ id, params: { mode, trigger } satisfies PassParams });
   } catch (e: any) {
     await env.DB.prepare("UPDATE runs SET status = 'failed', finished = ?, error = ? WHERE id = ?").bind(nowS(), `create: ${String(e?.message || e).slice(0, 400)}`, id).run();
+    await releaseLease(env.DB, "agk", mode, id).run();
     throw e;
   }
   return { id, mode };
