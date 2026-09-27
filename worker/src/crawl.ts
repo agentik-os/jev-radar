@@ -1,7 +1,7 @@
 // Incremental crawl of the tracked X posts, ported from pipeline/crawl.py and pipeline/replies.py.
 // State lives in D1; each function below is one Workflow step and is safe to retry (upserts only).
 import { Env, Mode, chunks, now as nowS, pool } from "./env";
-import { FxStats, addFx, fetchJson, fxStats, getJson } from "./fx";
+import { FxStats, addFx, fetchJson, fxStats, getJson, lookAgain, verdict } from "./fx";
 import { LAUNCH, Raw, isTracked, links, smallMp4 } from "./radar";
 import SEEDS from "./config/seeds.json";
 
@@ -247,7 +247,8 @@ async function timeline([handle, since, maxPages]: Job, fx?: FxStats): Promise<{
 
 /** Step: read a slice of the round's timelines. Returns the statuses they link to (next round). */
 export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: number):
-    Promise<{ added: number; pending: Pair[]; failed: number; throttled: number; partial: number; t: number; authors: string[]; pages: number; fx: FxStats }> {
+    Promise<{ added: number; pending: Pair[]; failed: number; throttled: number; partial: number; t: number; authors: string[]; pages: number; fx: FxStats;
+      confirm: { suspects: number; live: number; gone: number; unsure: number; sample: string[] } }> {
   const db = env.DB;
   const fx = fxStats();
   const res = await pool(jobs, FX_PARALLEL, j => timeline(j, fx));
@@ -256,12 +257,16 @@ export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: numb
   const pend = new Map<string, Pair>();
   const stmts: D1PreparedStatement[] = [];
   let failed = 0, throttled = 0, partial = 0;
+  const suspects: { handle: string; first: Answer }[] = [];
   for (const r of res) {
     const k = r.handle.toLowerCase();
     // Throttling (429, 5xx, timeouts on every retry) says nothing about the account: nothing is written, so a new account
     // stays new and a known one keeps its last_checked (its next read goes back to it less OVERLAP; no post is lost). A read
     // cut short by throttling clears the failure flag but does not move last_checked.
     if (r.answer === "throttled") { throttled++; continue; }
+    // A 404 or an empty timeline is only a suspect: fxtwitter answers 404 for live accounts on a share of its requests. It
+    // writes nothing until the look below (after the rest of the slice) confirms it; unconfirmed, it counts like throttling.
+    if (!r.ok && !r.partial) { suspects.push({ handle: r.handle, first: r.answer }); failed++; continue; }
     if (r.partial) {
       partial++;
       stmts.push(db.prepare("UPDATE accounts SET failed = 0 WHERE k = ? AND failed != 0").bind(k));
@@ -276,11 +281,26 @@ export async function readTimelines(env: Env, mode: Mode, jobs: Job[], now: numb
       handles.push(...l.handles);
     }
   }
+  const confirm = { suspects: suspects.length, live: 0, gone: 0, unsure: 0, sample: [] as string[] };
+  const looks = await pool(suspects, FX_PARALLEL, s => lookAgain(s.handle, fx));
+  suspects.forEach((s, i) => {
+    const k = s.handle.toLowerCase(), l = looks[i], v = verdict(l);
+    confirm[v]++;
+    if (confirm.sample.length < 12) confirm.sample.push(`${s.handle}:${s.first}>${l.tl}/${l.pr.join(",")}=${v}`);
+    // gone: the failure flag, as a failed read always set it; live after an empty timeline: a read with nothing in it;
+    // live after a 404, or unsure: nothing is written, so the account stays due (or new) and the next pass reads it
+    if (v === "gone" || (v === "live" && s.first === "empty" && l.tl !== "posts")) {
+      const bad = v === "gone" ? 1 : 0;
+      stmts.push(mode === "fast"
+        ? db.prepare("UPDATE accounts SET failed = ?1, last_checked = CASE WHEN last_checked = 0 THEN ?2 ELSE last_checked END WHERE k = ?3 AND (failed != ?1 OR last_checked = 0)").bind(bad, now, k)
+        : db.prepare("UPDATE accounts SET failed = ?, last_checked = ? WHERE k = ?").bind(bad, now, k));
+    }
+  });
   await batchRun(db, stmts);
   const authors = new Set<string>();
   const added = await upsertPosts(db, found, authors);
   await addAccounts(db, handles);
-  return { added, pending: [...pend.values()].slice(0, 15000), failed, throttled, partial, t: Date.now(), authors: [...authors], pages: res.reduce((a, r) => a + r.pages, 0), fx };
+  return { added, pending: [...pend.values()].slice(0, 15000), failed, throttled, partial, t: Date.now(), authors: [...authors], pages: res.reduce((a, r) => a + r.pages, 0), fx, confirm };
 }
 
 /** Step (full pass, every 6 h): refresh the metrics of the most viewed posts. */

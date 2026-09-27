@@ -5,6 +5,7 @@
   "scripts": {
     "check": "tsc --noEmit",
     "test": "node scripts/parity.mjs",
+    "test:confirm": "node --test test/confirm.test.mjs",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

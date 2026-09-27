@@ -20,7 +20,7 @@ export function addFx(a: FxStats, b: FxStats) {
  *  timeline reads of live accounts from a Worker; a profile read asks twice). */
 export type FxKind = "ok" | "gone" | "transient";
 
-export async function fetchJson(url: string, st?: FxStats, tries = 4, again404 = false): Promise<{ d: any | null; kind: FxKind }> {
+export async function fetchJson(url: string, st?: FxStats, tries = 4, again404 = false): Promise<{ d: any | null; kind: FxKind; status?: number }> {
   let asked404 = false;
   for (let i = 0; i < tries; i++) {
     fxCalls++;
@@ -34,7 +34,7 @@ export async function fetchJson(url: string, st?: FxStats, tries = 4, again404 =
         if (st) { st.wait_ms += Date.now() - t0; st.retried["404"] = (st.retried["404"] || 0) + 1; st.backoff_ms += 3000; }
         await sleep(3000); i--; continue;
       }
-      if ([400, 401, 403, 404].includes(r.status)) { await r.body?.cancel(); if (st) st.wait_ms += Date.now() - t0; return { d: null, kind: "gone" }; }
+      if ([400, 401, 403, 404].includes(r.status)) { await r.body?.cancel(); if (st) st.wait_ms += Date.now() - t0; return { d: null, kind: "gone", status: r.status }; }
       if (r.ok) { const d = await r.json(); if (st) st.wait_ms += Date.now() - t0; return { d, kind: "ok" }; }
       why = String(r.status);
       await r.body?.cancel();
@@ -47,4 +47,32 @@ export async function fetchJson(url: string, st?: FxStats, tries = 4, again404 =
 
 export async function getJson(url: string, st?: FxStats, tries = 4): Promise<any | null> {
   return (await fetchJson(url, st, tries)).d;
+}
+
+/** What fxtwitter says about an account on a later, separate look: its first timeline page (`tl`) and two reads of its
+ *  profile (`pr`, `/2/profile/<handle>`, a few seconds apart). Since 2026-09-26 23:00 UTC fxtwitter answers 404 to any of
+ *  these endpoints for live accounts, on a fraction of the requests that reached 15-20 % of first timeline reads on
+ *  2026-09-27, sometimes several requests in a row; an account that is really gone or renamed answers 404 on every one. */
+export interface Look { tl: "posts" | "empty" | "404" | "other"; pr: ("user" | "404" | "other")[] }
+
+export async function lookAgain(handle: string, st?: FxStats, gapMs = 3000): Promise<Look> {
+  const t = await fetchJson(`https://api.fxtwitter.com/2/profile/${handle}/statuses`, st, 4);
+  const tl: Look["tl"] = t.kind === "ok" ? ((t.d?.results || []).length ? "posts" : "empty") : t.status === 404 ? "404" : "other";
+  const pr: Look["pr"] = [];
+  for (let i = 0; i < 2; i++) {
+    if (i) await sleep(gapMs);
+    const p = await fetchJson(`https://api.fxtwitter.com/2/profile/${handle}`, st, 4);
+    pr.push(p.kind === "ok" && p.d?.user?.screen_name ? "user" : p.status === 404 ? "404" : "other");
+    if (pr[i] === "user") break; // one profile answer is enough to know the account exists
+  }
+  return { tl, pr };
+}
+
+/** The confirmation rule (same as the radars). "live": any look found the account (a timeline with posts, or its profile).
+ *  "gone": the timeline has nothing (404 or empty) and both profile reads answer 404. Anything else is "unsure" and
+ *  counts like throttling. */
+export function verdict(l: Look): "live" | "gone" | "unsure" {
+  if (l.tl === "posts" || l.pr.includes("user")) return "live";
+  if ((l.tl === "404" || l.tl === "empty") && l.pr.length >= 2 && l.pr.every(x => x === "404")) return "gone";
+  return "unsure";
 }

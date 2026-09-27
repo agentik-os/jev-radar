@@ -50,6 +50,8 @@ export class RadarPass extends WorkflowEntrypoint<Env, PassParams> {
       let added = 0, linked = 0, accountsRead = 0, failedAccounts = 0, throttledAccounts = 0, planned = 0, pages = 0, cursor: string | null = null;
       const newAuthors = new Set<string>();
       const fx: FxStats = fxStats();
+      // 404s and empty timelines looked at again (crawl.readTimelines): live, confirmed gone, or unsure (counted like throttling)
+      const confirm = { suspects: 0, live: 0, gone: 0, unsure: 0, sample: [] as string[] };
       for (let rnd = 1; rnd <= MAX_ROUNDS[mode] + 1; rnd++) {
         const l = await S(`r${rnd}-linked`, STEP, e => fetchLinked(e, pending));
         added += l.added; linked += l.fetched;
@@ -68,6 +70,8 @@ export class RadarPass extends WorkflowEntrypoint<Env, PassParams> {
           pending.push(...r.pending);
           for (const a of r.authors || []) newAuthors.add(a);
           if (r.fx) addFx(fx, r.fx);
+          if (r.confirm) { for (const k of ["suspects", "live", "gone", "unsure"] as const) confirm[k] += r.confirm[k];
+            for (const x of r.confirm.sample) if (confirm.sample.length < 12) confirm.sample.push(x); }
           pages += r.pages || 0;
           // the time is taken inside the step, so a replay makes the same decision
           if (fastRound && r.t - now * 1000 > FAST_READ_MS) break;
@@ -82,7 +86,7 @@ export class RadarPass extends WorkflowEntrypoint<Env, PassParams> {
       }
       if (mode === "full") stats.refresh = await S("refresh-top", STEP, e => refreshTop(e, now));
       stats.crawl = await S("crawl-finish", STEP, async e => ({ ...(await crawlFinish(e, mode, added, now, [...newAuthors])), linked, accountsRead, failedAccounts, throttledAccounts,
-        pages, fx, ...(mode === "fast" ? { planned, cursor } : {}) }));
+        pages, fx, confirm, ...(mode === "fast" ? { planned, cursor } : {}) }));
 
       // ---- transcription (Workers AI Whisper): short videos in every pass, long ones (first 30 minutes) in the full pass
       const touched: string[] = [];
