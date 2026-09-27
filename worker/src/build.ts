@@ -2,6 +2,7 @@
 import { Env } from "./env";
 import SYSTEMS from "./config/systems.json";
 import { IDEA_WEIGHTS, PENDING, WEIGHTS, buildIdeas, buildPlays, compact, nicheBoard, radarScore } from "./radar";
+import { PutStats, putJson, putStats } from "./r2";
 
 export const DATA_FILES = ["posts.json", "niches.json", "ideas.json", "plays.json", "replied.json", "meta.json"];
 const PAGE = 1500;
@@ -72,18 +73,20 @@ export async function buildAndPublish(env: Env, now: number, runId: string) {
     // small index for server-rendered post pages: rank per post id
     "ranks.json": JSON.stringify(Object.fromEntries(ranked.map(p => [p.id, p.rk]))),
   };
+  // each object is written and retried on its own (r2.putJson), meta.json last
   let bytes = 0;
-  for (const [name, body] of Object.entries(files)) { bytes += body.length; await put(env, name, body); }
+  const st = putStats(), t0 = Date.now();
+  for (const [name, body] of Object.entries(files)) { bytes += body.length; await put(env, name, body, st, t0); }
   const metaBody = JSON.stringify(meta);
-  await put(env, "meta.json", metaBody);
+  await put(env, "meta.json", metaBody, st, t0);
   const back = await env.BUCKET.get("data/meta.json");
   const readBack = back ? (JSON.parse(await back.text()) as any).updated : null;
   return {
     posts: posts.length, main: main.length, authors: meta.authors, niches: board.length, ideas: ideas.length,
-    top_niche: board[0]?.id ?? null, bytes: bytes + metaBody.length, meta_updated: now, meta_read_back: readBack, published: readBack === now,
+    top_niche: board[0]?.id ?? null, bytes: bytes + metaBody.length, meta_updated: now, meta_read_back: readBack, published: readBack === now, r2: st,
   };
 }
 
-async function put(env: Env, name: string, body: string) {
-  await env.BUCKET.put(`data/${name}`, body, { httpMetadata: { contentType: "application/json; charset=utf-8", cacheControl: "public, max-age=30" } });
+async function put(env: Env, name: string, body: string, st?: PutStats, started?: number) {
+  return putJson(env.BUCKET, `data/${name}`, body, st, started);
 }
