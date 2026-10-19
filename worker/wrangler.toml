@@ -2,8 +2,16 @@
 name = "agk-radar"
 main = "src/index.ts"
 compatibility_date = "2026-09-01"
-workers_dev = true
+workers_dev = true     # the workers.dev copy stays up as a preview and sends noindex (site.ts indexable())
 preview_urls = false
+
+# public hostname and the old one (Workers custom domains: Cloudflare owns their DNS records and certificates). index.ts
+# answers jev.agentik-os.com with a 301 to the same path on radar.agentik-os.com. Keep both here: a deploy without a
+# route can detach that domain.
+routes = [
+  { pattern = "radar.agentik-os.com", custom_domain = true },
+  { pattern = "jev.agentik-os.com", custom_domain = true },
+]
 
 [limits]
 cpu_ms = 300000
@@ -12,8 +20,8 @@ cpu_ms = 300000
 subrequests = 200000
 
 [vars]
-SITE_URL = "https://agk-radar.x-18a.workers.dev"   # switches to https://radar.agentik-os.com after the zone move
-INDEXABLE = "false"                                 # "true" once served on the public hostname
+SITE_URL = "https://radar.agentik-os.com"           # canonical origin (public hostname since 2026-10-19)
+INDEXABLE = "true"                                  # indexing open on radar.agentik-os.com; *.workers.dev stays noindex
 WHISPER_MODEL = "@cf/openai/whisper-large-v3-turbo"
 
 [assets]

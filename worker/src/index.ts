@@ -191,39 +191,53 @@ async function importRows(env: Env, table: string, rows: any[]): Promise<Respons
   return json({ ok: true, table, rows: rows.length });
 }
 
+/** The public hostname is HTTPS only: plain HTTP gets a 308 to the same URL on https, every HTTPS answer carries HSTS
+ *  (one year, no includeSubDomains, no preload). The workers.dev copy is left as Cloudflare serves it. */
+const PUBLIC_HOST = "radar.agentik-os.com";
+export const HSTS = "max-age=31536000";
+
+async function route(req: Request, env: Env, url: URL): Promise<Response> {
+  const path = url.pathname.replace(/\/+$/, "") || "/";
+  if (path.startsWith("/admin/")) return admin(env, req, url);
+  if (path.startsWith("/data/")) {
+    const name = path.slice(6);
+    if (!PUBLIC_DATA.has(name)) return new Response("Not found", { status: 404 });
+    const obj = await env.BUCKET.get(`data/${name}`);
+    if (!obj) return new Response("Not found", { status: 404 });
+    return new Response(obj.body, { headers: {
+      "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=30", ETag: obj.httpEtag,
+      "Access-Control-Allow-Origin": "*", "Last-Modified": obj.uploaded.toUTCString() } });
+  }
+  if (path === "/api/check-idea") return checkIdea(env, req);
+  if (path === "/api/money-now") return moneyNow(env, req);
+  if (path === "/sitemap.xml") return sitemap(env, url.origin);
+  if (path === "/llms.txt") return llms(env, url.origin);
+  if (path === "/robots.txt") return robots(env, url.origin);
+  if (path === "/post") {
+    const r = await env.ASSETS.fetch(new Request(url.origin + "/post.html"));
+    const h = new Headers(r.headers); h.set("X-Robots-Tag", "noindex, nofollow");
+    return new Response(r.body, { status: r.status, headers: h });
+  }
+  const first = path.split("/")[1] || "";
+  const isPage = path === "/" || (first === "p" && path.split("/").length === 3) || first in SECTIONS
+    || /^\/opportunities\/(niches|ideas|check)$/.test(path);
+  if (isPage) return renderPage(env, req, path);
+  const asset = await env.ASSETS.fetch(req);
+  if (asset.status === 404 && !/\.[a-z0-9]{2,5}$/i.test(path)) return renderPage(env, req, path); // branded 404 page
+  return asset;
+}
+
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     // after the DNS move the old hostname answers a permanent redirect to the same path on the new one
-    if (url.hostname === "jev.agentik-os.com") return Response.redirect(`https://radar.agentik-os.com${url.pathname}${url.search}`, 301);
-    const path = url.pathname.replace(/\/+$/, "") || "/";
-    if (path.startsWith("/admin/")) return admin(env, req, url);
-    if (path.startsWith("/data/")) {
-      const name = path.slice(6);
-      if (!PUBLIC_DATA.has(name)) return new Response("Not found", { status: 404 });
-      const obj = await env.BUCKET.get(`data/${name}`);
-      if (!obj) return new Response("Not found", { status: 404 });
-      return new Response(obj.body, { headers: {
-        "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=30", ETag: obj.httpEtag,
-        "Access-Control-Allow-Origin": "*", "Last-Modified": obj.uploaded.toUTCString() } });
-    }
-    if (path === "/api/check-idea") return checkIdea(env, req);
-    if (path === "/api/money-now") return moneyNow(env, req);
-    if (path === "/sitemap.xml") return sitemap(env, url.origin);
-    if (path === "/llms.txt") return llms(env, url.origin);
-    if (path === "/robots.txt") return robots(env, url.origin);
-    if (path === "/post") {
-      const r = await env.ASSETS.fetch(new Request(url.origin + "/post.html"));
-      const h = new Headers(r.headers); h.set("X-Robots-Tag", "noindex, nofollow");
-      return new Response(r.body, { status: r.status, headers: h });
-    }
-    const first = path.split("/")[1] || "";
-    const isPage = path === "/" || (first === "p" && path.split("/").length === 3) || first in SECTIONS
-      || /^\/opportunities\/(niches|ideas|check)$/.test(path);
-    if (isPage) return renderPage(env, req, path);
-    const asset = await env.ASSETS.fetch(req);
-    if (asset.status === 404 && !/\.[a-z0-9]{2,5}$/i.test(path)) return renderPage(env, req, path); // branded 404 page
-    return asset;
+    if (url.hostname === "jev.agentik-os.com") return Response.redirect(`https://${PUBLIC_HOST}${url.pathname}${url.search}`, 301);
+    if (url.hostname !== PUBLIC_HOST) return route(req, env, url);
+    if (url.protocol === "http:") { url.protocol = "https:"; return Response.redirect(url.toString(), 308); }
+    const res = await route(req, env, url);
+    const out = new Response(res.body, res);
+    out.headers.set("Strict-Transport-Security", HSTS);
+    return out;
   },
 
   async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext) {

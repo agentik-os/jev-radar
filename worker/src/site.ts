@@ -117,15 +117,20 @@ function block(m: Meta, indexable: boolean): string {
 <!--/META-->`;
 }
 
+/** Search engines may index only the public hostname: the workers.dev copy keeps noindex even with INDEXABLE = "true",
+ *  so it never competes with radar.agentik-os.com as a duplicate (its canonical already points there through SITE_URL). */
+export const indexable = (env: Env, hostname: string) => env.INDEXABLE === "true" && !hostname.endsWith(".workers.dev");
+
 export async function renderPage(env: Env, req: Request, path: string): Promise<Response> {
   const url = new URL(req.url);
   const site = env.SITE_URL || url.origin;
+  const open = indexable(env, url.hostname);
   const [html, { m, status }] = await Promise.all([shell(env, url.origin), metaFor(env, site, path, url.searchParams)]);
-  const out = html.replace(/<!--META-->[\s\S]*?<!--\/META-->/, block(m, env.INDEXABLE === "true"));
+  const out = html.replace(/<!--META-->[\s\S]*?<!--\/META-->/, block(m, open));
   return new Response(out, { status, headers: {
     "Content-Type": "text/html; charset=utf-8",
     "Cache-Control": "public, max-age=0, s-maxage=300",
-    ...(m.noindex || env.INDEXABLE !== "true" ? { "X-Robots-Tag": "noindex, nofollow" } : {}),
+    ...(m.noindex || !open ? { "X-Robots-Tag": "noindex, nofollow" } : {}),
   } });
 }
 
@@ -176,8 +181,8 @@ Public posts are collected from a growing network of X accounts through the publ
 
 export function robots(env: Env, origin: string): Response {
   const site = env.SITE_URL || origin;
-  const body = env.INDEXABLE === "true"
+  const body = indexable(env, new URL(origin).hostname)
     ? `User-agent: *\nAllow: /\nDisallow: /post\nDisallow: /admin/\n\nSitemap: ${site}/sitemap.xml\n`
-    : `# ${NAME} preview host: indexing opens when the site moves to its public hostname\nUser-agent: *\nDisallow: /\n\nSitemap: ${site}/sitemap.xml\n`;
+    : `# ${NAME} preview copy, not indexed${site !== origin ? `; the public site is ${site}` : ""}\nUser-agent: *\nDisallow: /\n\nSitemap: ${site}/sitemap.xml\n`;
   return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
 }

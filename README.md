@@ -2,8 +2,9 @@
 
 AGK Radar tracks every post on X about System One models, classifies each one with AGK Intelligence, and ranks the product niches and business ideas they point to. The repository keeps its historical name, `agentik-os/jev-radar`; the product name is AGK Radar.
 
-- Preview host (Cloudflare Workers): https://agk-radar.x-18a.workers.dev
-- Public host after the DNS move: https://radar.agentik-os.com (the old `jev.agentik-os.com` then answers a 301 to the same path)
+- Public host: https://radar.agentik-os.com (Workers custom domain on `agk-radar`, since 2026-10-19 16:50 UTC)
+- Old host: `jev.agentik-os.com` answers a 301 to the same path and query on radar.agentik-os.com (custom domain on the same Worker since 2026-10-19 16:55 UTC)
+- Preview copy: https://agk-radar.x-18a.workers.dev (same Worker and data, never indexed)
 
 ## How it runs (branch `cloudflare`)
 
@@ -21,7 +22,9 @@ Everything runs on Cloudflare. There is no server of our own.
 
 Server-rendered pages keep the real paths: `/`, `/builds`, `/opportunities` (and `/opportunities/niches|ideas|check`, `?focus=<niche or idea>`), `/money`, `/top`, `/people`, `/all`, `/map`, `/p/<post id>`. Each gets its own title, description, Open Graph and Twitter Card tags, canonical URL and JSON-LD. `/post` is a private helper page (`noindex`).
 
-While the site runs on `workers.dev` it sends `noindex` and `robots.txt` disallows crawling, so it does not compete with the live site. Setting `INDEXABLE = "true"` and `SITE_URL` in `worker/wrangler.toml` opens it on the public hostname.
+Indexing: `worker/wrangler.toml` sets `INDEXABLE = "true"` and `SITE_URL = "https://radar.agentik-os.com"`, which is the canonical origin of every page, the sitemap and `llms.txt`. Pages on radar.agentik-os.com carry no robots tag and `robots.txt` allows crawling (except `/post` and `/admin/`). The `workers.dev` copy always sends `noindex` (meta tag and `X-Robots-Tag`) and its `robots.txt` disallows crawling, whatever `INDEXABLE` says (`indexable()` in `worker/src/site.ts`), so it never competes as a duplicate.
+
+HTTPS: on radar.agentik-os.com the Worker answers plain HTTP with a 308 to the same URL on https, and every HTTPS answer carries `Strict-Transport-Security: max-age=31536000` (no `includeSubDomains`, no preload). Both custom domains are listed under `routes` in `worker/wrangler.toml`; keep them there, because a deploy without a route can detach that domain. `worker/test/host.test.mjs` covers the redirect, HSTS and indexing rules.
 
 ## Commands
 
@@ -29,6 +32,7 @@ While the site runs on `workers.dev` it sends `noindex` and `robots.txt` disallo
 cd worker
 npm install
 npm run check                    # TypeScript
+npm run test:confirm             # crawl, R2, lease and host tests (node --test)
 node scripts/parity.mjs <raw dir> <golden_keys.json> [published posts.json]   # parity with the Python pipeline
 wrangler d1 migrations apply agk-radar --remote
 wrangler deploy
@@ -63,9 +67,10 @@ Secrets (names only): `TYPESAFE_API_KEY` (AGK Intelligence provider), `ADMIN_TOK
 - **R2 writes are retried per file.** From about 13:40 UTC on 2026-09-27, R2 answered part of the larger writes with HTTP 500 (`We encountered an internal error. Please try again. (10001)`) in this bucket (`data/ranks.json`, `data/posts.json`) and in the radar-ops bucket, and build-publish steps failed with it or with `Network connection lost.`. `worker/src/r2.ts` now writes each file on its own: up to 6 tries with exponential backoff and jitter, a call with no answer after 90 s is abandoned, and a file already stored with the same content (SHA-256 in its custom metadata) is not written again. `meta.json` is still written last; `runs.stats.publish.r2` has the counts. The build step also exceeds the Worker memory limit about once an hour (`exceededMemory` in the Workers analytics since at least 2026-09-26 20:00 UTC); the step retry has recovered it so far.
 - **Transcription.** An empty transcript is stored only when it is proven: the HLS playlist declares no audio track (`no_audio`), Whisper's voice activity detection found no speech and a second hearing without it found no clear speech (at least 3 distinct sentences and 15 words that are not known hallucinations, heard the same way by a third hearing), or everything Whisper wrote is a known non-speech hallucination (`no_speech`, e.g. music only). The second hearing exists because the voice activity detection misses speech under loud game sound or music (a 5-minute game video with clear dialogue was stored empty before it). Workers AI reports no no-speech probability, so the filter uses Whisper's confidence per segment (`avg_logprob`, `compression_ratio`) and a list of its usual inventions ("Thank you.", "You", subtitle credits); see `worker/src/transcribe.ts`. Whisper output on music is not deterministic, so an occasional invented line can still pass; transcripts under 15 words never reach the classifier. Other errors are retried with back-off inside the pass, then by the next passes; after 4 failed passes the video is stored as `[failed: …]`. Videos over 5 minutes are left to the full pass (6 per pass, one per step). Audio past 30 minutes is not transcribed.
 - **Autopost is not ported.** The X credentials do not exist yet.
+- **Spain during LaLiga matches.** Spanish ISPs reset TLS to many Cloudflare IP addresses during LaLiga match hours, so visitors in Spain may be unable to reach AGK Radar then. This is accepted under the Cloudflare-only rule. Operator workaround: `curl --resolve radar.agentik-os.com:443:104.18.32.7 https://radar.agentik-os.com/` (or 162.159.140.1, 172.64.80.1, 104.21.0.1), or the local CONNECT proxy `http://127.0.0.1:8899`. Go-live and incident check: probe the host plainly, then with `--resolve` to each of those four addresses; a plain reset while a pinned address answers is this ISP block, not an outage.
 
 ## Legacy (main branch)
 
-`pipeline/` (Python), `api/` and `vercel.json` are the previous implementation. They still serve `jev.agentik-os.com` from Vercel until the DNS move, updated by `.github/workflows/failover.yml` on GitHub Actions. The previous VPS schedule is gone and nothing here depends on it.
+`pipeline/` (Python), `api/` and `vercel.json` are the previous implementation. They served `jev.agentik-os.com` from Vercel until 2026-10-19, when the hostname moved to the Worker. `.github/workflows/failover.yml` is disabled (2026-10-19 14:49 UTC). The Vercel project `jev-radar` still exists and is paused 48 hours after the Cloudflare host has passed its checks twice; it is the rollback path until then (recreate the CNAME `jev` to `cname.vercel-dns.com` after removing the custom domain). The previous VPS schedule is gone and nothing here depends on it.
 
 Model provider: TypeSafe AI. AGK Radar is independent and not affiliated with TypeSafe AI. Posts belong to their authors.
