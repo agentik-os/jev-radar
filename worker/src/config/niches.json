@@ -1,0 +1,163 @@
+{
+ "ad_intelligence": {
+  "desc": "Analyzing ads or marketing creatives at scale (hooks, offers, CTAs, competitor ads)",
+  "en": "Ad & creative intelligence",
+  "fr": "Analyse de pubs & créas",
+  "idea_en": "SaaS that scans competitors' live ads weekly and emails a report of the hooks that work.",
+  "idea_fr": "SaaS qui scanne chaque semaine les pubs actives des concurrents et envoie un rapport des accroches qui marchent."
+ },
+ "content_virality": {
+  "desc": "Scoring or improving social media posts, predicting virality, content optimization for creators",
+  "en": "Virality scoring for creators",
+  "fr": "Score de viralité pour créateurs",
+  "idea_en": "Extension or app that scores a post before publishing and suggests edits; monthly creator subscription.",
+  "idea_fr": "Extension ou app qui note un post avant publication et suggère quoi changer ; abonnement mensuel créateurs."
+ },
+ "newsjacking_pr": {
+  "desc": "Monitoring news or trends and matching them to brands, PR, press opportunities",
+  "en": "News monitoring & newsjacking",
+  "fr": "Veille d'actu & newsjacking",
+  "idea_en": "Daily 'which stories to jump on today' alert for brands and PR agencies.",
+  "idea_fr": "Alerte quotidienne « quelles actus reprendre aujourd'hui » pour marques et agences PR."
+ },
+ "lead_scoring": {
+  "desc": "Scoring sales leads, matching prospects to messages, outreach personalization, buying signals",
+  "en": "Lead scoring & outreach",
+  "fr": "Scoring de leads & prospection",
+  "idea_en": "CRM plugin that scores every lead and outreach message before sending.",
+  "idea_fr": "Plugin CRM qui note chaque lead et chaque message de prospection avant envoi."
+ },
+ "email_triage": {
+  "desc": "Classifying, prioritizing or routing emails, inbox triage",
+  "en": "Email triage",
+  "fr": "Tri d'emails",
+  "idea_en": "Inbox assistant that sorts and prioritizes in real time for a few dollars a month.",
+  "idea_fr": "Assistant de boîte mail qui trie et priorise en temps réel pour quelques euros par mois."
+ },
+ "support_routing": {
+  "desc": "Routing or classifying customer support tickets, chat intents, helpdesk automation",
+  "en": "Support ticket routing",
+  "fr": "Routage du support client",
+  "idea_en": "Zendesk / Intercom app that classifies and routes every ticket instantly.",
+  "idea_fr": "App Zendesk / Intercom qui classe et route chaque ticket instantanément."
+ },
+ "code_review": {
+  "desc": "Reviewing pull requests or code diffs, detecting risky changes, code quality checks",
+  "en": "Code & PR review",
+  "fr": "Revue de code & PR",
+  "idea_en": "GitHub App running typed checks on every PR (secrets, auth, deleted tests), billed per repo.",
+  "idea_fr": "GitHub App qui pose 15 contrôles typés sur chaque PR (secrets, auth, tests supprimés), facturée par dépôt."
+ },
+ "agent_safety": {
+  "desc": "Guarding AI agents: approving shell commands, permissions, tool-call safety, guardrails",
+  "en": "AI agent guardrails",
+  "fr": "Garde-fous pour agents IA",
+  "idea_en": "Natural-language permission layer for coding agents, sold to teams.",
+  "idea_fr": "Couche de permissions en langage naturel pour agents de code, vendue aux équipes."
+ },
+ "context_compaction": {
+  "desc": "Compacting or pruning an AI agent's context, memory selection, deciding what to keep in context",
+  "en": "Context compaction & memory",
+  "fr": "Compaction de contexte & mémoire",
+  "idea_en": "Claude Code / Codex plugin that prunes context in 1s; license or freemium.",
+  "idea_fr": "Plugin pour Claude Code / Codex qui élague le contexte en 1 s ; licence ou freemium."
+ },
+ "browser_automation": {
+  "desc": "Browser agents or computer use: choosing clicks, typing and navigation on web pages or desktop apps",
+  "en": "Browser agents & computer use",
+  "fr": "Agents navigateur & computer use",
+  "idea_en": "Ultra-fast web automation API billed per use (scraping, forms, bookings).",
+  "idea_fr": "API d'automatisation web ultra-rapide facturée à l'usage (scraping, formulaires, réservations)."
+ },
+ "qa_testing": {
+  "desc": "Automated QA testing of apps, adversarial testing, test agents",
+  "en": "Automated QA testing",
+  "fr": "Tests QA automatisés",
+  "idea_en": "Service that runs automatic testers on every deploy and flags regressions.",
+  "idea_fr": "Service qui lance des testeurs automatiques sur chaque déploiement et signale les régressions."
+ },
+ "tool_routing": {
+  "desc": "Routing requests between tools, models or skills; choosing which LLM or handler to use",
+  "en": "Model & tool routing",
+  "fr": "Routage de modèles & d'outils",
+  "idea_en": "Router sending each request to the cheapest capable model; take a cut of the savings.",
+  "idea_fr": "Routeur qui envoie chaque requête au modèle le moins cher capable de la traiter ; commission sur l'économie réalisée."
+ },
+ "search_ranking": {
+  "desc": "Search, reranking results, RAG passage selection, launchers ranking by intent",
+  "en": "Search & reranking",
+  "fr": "Recherche & reranking",
+  "idea_en": "Plug-and-play reranker for e-commerce or docs site search.",
+  "idea_fr": "Reranker plug-and-play pour la recherche interne d'un site e-commerce ou d'une doc."
+ },
+ "data_labeling": {
+  "desc": "Classifying rows of data, spreadsheets, databases, CSV labeling, research paper or document sorting",
+  "en": "Data & spreadsheet labeling",
+  "fr": "Classement de données & tableurs",
+  "idea_en": "Google Sheets / Excel add-on: a column that classifies or scores every row in plain language.",
+  "idea_fr": "Add-on Google Sheets / Excel : une colonne qui classe ou note chaque ligne en langage naturel."
+ },
+ "moderation": {
+  "desc": "Content moderation, spam, rage bait, scam detection, feed filtering",
+  "en": "Moderation & feed filtering",
+  "fr": "Modération & filtres de fil",
+  "idea_en": "Extension hiding rage bait, spam and crypto from your feed; small subscription.",
+  "idea_fr": "Extension qui masque rage bait, spam et crypto dans ton fil ; petit abonnement."
+ },
+ "trading_signals": {
+  "desc": "Trading decisions, market signals, buy/sell bots, finance",
+  "en": "Trading signals",
+  "fr": "Signaux de trading",
+  "idea_en": "Fast decision bots; high risk and heavy regulation.",
+  "idea_fr": "Bots de décision rapides ; risque élevé et régulation lourde."
+ },
+ "game_bots": {
+  "desc": "Game-playing bots and game AI (Mario, chess, Minecraft, Doom, NPCs)",
+  "en": "Game AI & NPCs",
+  "fr": "IA de jeux & PNJ",
+  "idea_en": "Reactive NPC SDK for indie devs, per-game license.",
+  "idea_fr": "SDK de PNJ réactifs pour développeurs indés, licence par jeu."
+ },
+ "voice_control": {
+  "desc": "Voice commands mapped to actions, voice interfaces",
+  "en": "Voice control",
+  "fr": "Commande vocale",
+  "idea_en": "Instant voice control for apps and browser, as a subscription.",
+  "idea_fr": "Contrôle vocal instantané d'apps et de navigateur, en abonnement."
+ },
+ "adaptive_ui": {
+  "desc": "Adaptive or personalized interfaces, recommendations, predictive UX",
+  "en": "Adaptive UI & recommendations",
+  "fr": "UI adaptative & recommandations",
+  "idea_en": "Widget that reorders a landing page per visitor; priced by traffic.",
+  "idea_fr": "Widget qui réorganise une landing page selon le visiteur ; prix par volume de trafic."
+ },
+ "robotics_iot": {
+  "desc": "Drones, robots, IoT, physical devices controlled by decisions",
+  "en": "Drones, robots & IoT",
+  "fr": "Drones, robots & IoT",
+  "idea_en": "Decision layer for hobby robots; market still nascent.",
+  "idea_fr": "Couche de décision pour robots amateurs ; marché encore naissant."
+ },
+ "dev_integration": {
+  "desc": "SDKs, libraries, wrappers or plugins that make Jev easier to use for developers (DuckDB, RubyLLM, MCP, languages)",
+  "en": "Dev SDKs & integrations",
+  "fr": "SDK & intégrations dev",
+  "idea_en": "Ready-made System One connectors (Zapier, n8n, Make) sold on marketplaces.",
+  "idea_fr": "Connecteurs System One prêts à l'emploi (Zapier, n8n, Make) vendus en marketplace."
+ },
+ "education_content": {
+  "desc": "Teaching Jev: courses, tutorials, explainers, newsletters about building with Jev",
+  "en": "System One courses & content",
+  "fr": "Formation & contenus sur System One",
+  "idea_en": "Mini-course or paid newsletter 'building with System One', with templates.",
+  "idea_fr": "Mini-cours ou newsletter payante « construire avec System One », avec des templates."
+ },
+ "none": {
+  "desc": "No specific product use case",
+  "en": "None",
+  "fr": "Aucune",
+  "idea_en": "",
+  "idea_fr": ""
+ }
+}

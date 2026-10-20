@@ -1,0 +1,16 @@
+{
+  "name": "agk-radar-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "node scripts/parity.mjs",
+    "test:confirm": "node --test test/confirm.test.mjs test/r2.test.mjs test/lease.test.mjs test/lease-status.test.mjs test/host.test.mjs",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250901.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.6.0"
+  }
+}

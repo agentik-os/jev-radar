@@ -1,0 +1,148 @@
+{
+ "qver": "967d38be",
+ "questions": {
+  "about_jev": {
+   "type": "noul",
+   "instructions": "Is the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) about TypeSafe's AI model Jev (or TypeSafe AI)?"
+  },
+  "category": {
+   "type": "choice",
+   "instructions": "What is the main kind of the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present)?",
+   "criteria": {
+    "build_demo": "The author shows something they built or ran with Jev: an app, tool, bot, experiment or benchmark on their own data",
+    "integration": "A company or platform announces Jev is available in or powering its product (gateway, SDK, framework, API integration)",
+    "explainer": "Explains what Jev is or how to use it: tutorial, thread, article, guide, ELI5",
+    "news": "Reports the launch or news about TypeSafe/Jev (funding, founder, release) without building anything",
+    "opinion": "Gives a personal reaction or opinion about Jev (excited, impressed, curious) without a demo",
+    "critique": "Is skeptical or critical of Jev, its claims or its marketing",
+    "official": "An official TypeSafe post (announcement, demo, customer result)",
+    "meme": "A joke or meme about Jev",
+    "question": "Asks a question about Jev or asks for help or access",
+    "unrelated": "Not about TypeSafe's Jev model at all (e.g. a person named Jev, another TypeSafe)"
+   }
+  },
+  "domain": {
+   "type": "choice",
+   "instructions": "Which application domain does the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) relate to?",
+   "criteria": {
+    "marketing_ads": "Marketing, ads, creatives, SEO, brand",
+    "social_content": "Social media posts, virality, content creation, news-jacking",
+    "sales_leads": "Sales, leads, outreach, CRM",
+    "coding_devtools": "Code review, developer tools, CLI safety, testing",
+    "agents_browser": "Agents, browser/computer use, tool calling, agent routing",
+    "games": "Games and game bots (Doom, Minecraft, chess…)",
+    "trading_finance": "Trading, markets, finance",
+    "support_email": "Customer support, email triage, tickets",
+    "search_rag": "Search, retrieval, reranking, RAG, memory",
+    "safety_moderation": "Safety, moderation, guardrails, spam, content filtering",
+    "data_classification": "Generic classification, extraction or labeling of documents or data",
+    "ux_personalization": "Adaptive UI, personalization, recommendations, voice interfaces",
+    "research_science": "Research papers, science, evaluation, benchmarks of the model itself",
+    "general": "No specific application domain"
+   }
+  },
+  "pattern": {
+   "type": "choice",
+   "instructions": "If the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) describes a system built with Jev, how is Jev used in it?",
+   "criteria": {
+    "batch_classifier": "Runs Jev over many items in bulk to label, score or filter them (ads, emails, papers, posts)",
+    "realtime_loop": "Calls Jev repeatedly in a live loop to decide the next action (game bot, trading bot, browser agent)",
+    "router": "Uses Jev as a switch that routes requests to tools, models, handlers or humans",
+    "reviewer_guardrail": "Uses Jev to check or approve another model's output or command before acting",
+    "ranking": "Uses Jev to rank or rerank candidates (search results, leads, stories)",
+    "features_for_ml": "Turns Jev answers into numeric features for a scoring or prediction model",
+    "none": "No system is described"
+   }
+  },
+  "niche": {
+   "type": "choice",
+   "instructions": "Which product niche does the use case in the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) belong to?",
+   "criteria": {
+    "ad_intelligence": "Analyzing ads or marketing creatives at scale (hooks, offers, CTAs, competitor ads)",
+    "content_virality": "Scoring or improving social media posts, predicting virality, content optimization for creators",
+    "newsjacking_pr": "Monitoring news or trends and matching them to brands, PR, press opportunities",
+    "lead_scoring": "Scoring sales leads, matching prospects to messages, outreach personalization, buying signals",
+    "email_triage": "Classifying, prioritizing or routing emails, inbox triage",
+    "support_routing": "Routing or classifying customer support tickets, chat intents, helpdesk automation",
+    "code_review": "Reviewing pull requests or code diffs, detecting risky changes, code quality checks",
+    "agent_safety": "Guarding AI agents: approving shell commands, permissions, tool-call safety, guardrails",
+    "context_compaction": "Compacting or pruning an AI agent's context, memory selection, deciding what to keep in context",
+    "browser_automation": "Browser agents or computer use: choosing clicks, typing and navigation on web pages or desktop apps",
+    "qa_testing": "Automated QA testing of apps, adversarial testing, test agents",
+    "tool_routing": "Routing requests between tools, models or skills; choosing which LLM or handler to use",
+    "search_ranking": "Search, reranking results, RAG passage selection, launchers ranking by intent",
+    "data_labeling": "Classifying rows of data, spreadsheets, databases, CSV labeling, research paper or document sorting",
+    "moderation": "Content moderation, spam, rage bait, scam detection, feed filtering",
+    "trading_signals": "Trading decisions, market signals, buy/sell bots, finance",
+    "game_bots": "Game-playing bots and game AI (Mario, chess, Minecraft, Doom, NPCs)",
+    "voice_control": "Voice commands mapped to actions, voice interfaces",
+    "adaptive_ui": "Adaptive or personalized interfaces, recommendations, predictive UX",
+    "robotics_iot": "Drones, robots, IoT, physical devices controlled by decisions",
+    "dev_integration": "SDKs, libraries, wrappers or plugins that make Jev easier to use for developers (DuckDB, RubyLLM, MCP, languages)",
+    "education_content": "Teaching Jev: courses, tutorials, explainers, newsletters about building with Jev",
+    "none": "No specific product use case"
+   }
+  },
+  "sentiment": {
+   "type": "score",
+   "instructions": "What attitude toward Jev does the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) express?",
+   "criteria": [
+    "Hostile: dismissive or calls it hype or a scam",
+    "Skeptical: doubts the claims",
+    "Neutral: factual, no opinion",
+    "Positive: impressed or interested",
+    "Enthusiastic: calls it insane, game-changing"
+   ]
+  },
+  "depth": {
+   "type": "score",
+   "instructions": "How much technical detail does the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) give about how something works or was built?",
+   "criteria": [
+    "None",
+    "A vague mention",
+    "Some concrete detail",
+    "Clear explanation of the setup",
+    "Detailed technical walkthrough"
+   ]
+  },
+  "passive_potential": {
+   "type": "score",
+   "instructions": "How well could the use case in the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) become a self-serve product that earns recurring revenue with little ongoing work from its owner?",
+   "criteria": [
+    "No product here: a toy, a one-off experiment, or just commentary",
+    "Hard to sell: niche curiosity, or needs constant manual work or custom service",
+    "Plausible product, but needs sales effort or heavy support",
+    "Clear self-serve product with an obvious buyer and recurring use",
+    "Strong passive product: buyers already pay for this problem, usage recurs automatically, little upkeep"
+   ]
+  },
+  "demand_signal": {
+   "type": "noul",
+   "instructions": "Does the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) (or the reaction it describes) show that people want this: asking for access, the code, a tool, or saying they need it?"
+  },
+  "commercial": {
+   "type": "noul",
+   "instructions": "Is the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) tied to a commercial product, paid service or startup already selling this use case?"
+  },
+  "working_demo": {
+   "type": "noul",
+   "instructions": "Does the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) show a working demo, screenshot or video of Jev in action?"
+  },
+  "open_source": {
+   "type": "noul",
+   "instructions": "Does the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) share open source code, a repo, or a free tool people can try?"
+  },
+  "numbers": {
+   "type": "noul",
+   "instructions": "Does the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) give concrete numbers about Jev's cost, speed, accuracy or scale?"
+  },
+  "vs_llm": {
+   "type": "noul",
+   "instructions": "Does the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) compare Jev against LLMs such as GPT, Claude, Gemini or Fable?"
+  },
+  "self_promo": {
+   "type": "noul",
+   "instructions": "Is the X post in `post` (with its `quoted_post`, `article` and `video_transcript` when present) also promoting the author's own product, service or course?"
+  }
+ }
+}
