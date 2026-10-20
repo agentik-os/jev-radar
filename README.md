@@ -6,7 +6,7 @@ AGK Radar tracks every post on X about System One models, classifies each one wi
 - Old host: `jev.agentik-os.com` answers a 301 to the same path and query on radar.agentik-os.com (custom domain on the same Worker since 2026-10-19 16:55 UTC)
 - Preview copy: https://agk-radar.x-18a.workers.dev (same Worker and data, never indexed)
 
-## How it runs (branch `cloudflare`)
+## How it runs
 
 Everything runs on Cloudflare. There is no server of our own.
 
@@ -69,8 +69,12 @@ Secrets (names only): `TYPESAFE_API_KEY` (AGK Intelligence provider), `ADMIN_TOK
 - **Autopost is not ported.** The X credentials do not exist yet.
 - **Spain during LaLiga matches.** Spanish ISPs reset TLS to many Cloudflare IP addresses during LaLiga match hours, so visitors in Spain may be unable to reach AGK Radar then. This is accepted under the Cloudflare-only rule. Operator workaround: `curl --resolve radar.agentik-os.com:443:104.18.32.7 https://radar.agentik-os.com/` (or 162.159.140.1, 172.64.80.1, 104.21.0.1), or the local CONNECT proxy `http://127.0.0.1:8899`. Go-live and incident check: probe the host plainly, then with `--resolve` to each of those four addresses; a plain reset while a pinned address answers is this ISP block, not an outage.
 
-## Legacy (main branch)
+## Branches
 
-`pipeline/` (Python), `api/` and `vercel.json` are the previous implementation. They served `jev.agentik-os.com` from Vercel until 2026-10-19, when the hostname moved to the Worker. `.github/workflows/failover.yml` is disabled (2026-10-19 14:49 UTC). The Vercel project `jev-radar` still exists and is paused 48 hours after the Cloudflare host has passed its checks twice; it is the rollback path until then (recreate the CNAME `jev` to `cname.vercel-dns.com` after removing the custom domain). The previous VPS schedule is gone and nothing here depends on it.
+`main` holds everything since 2026-10-20, when `cloudflare` was merged into it. `main` also keeps the legacy data commits (`data/`, `site/data/`), which the Worker never reads. Commit Worker changes to `cloudflare`, then merge `cloudflare` into `main` with the author `x@agentik-os.com`: a push to `main` builds the Vercel copy (the rollback path below), and Vercel blocks other authors. The `cloudflare` branch is deleted no earlier than 2026-11-03.
+
+## Legacy
+
+`pipeline/` (Python), `api/`, `vercel.json` and the data under `data/` and `site/data/` are the previous implementation. They served `jev.agentik-os.com` from Vercel until 2026-10-19, when the hostname moved to the Worker. `.github/workflows/failover.yml` is disabled (2026-10-19 14:49 UTC). The Vercel project `jev-radar` still exists and is paused 48 hours after the Cloudflare host has passed its checks twice; it is the rollback path until then (recreate the CNAME `jev` to `cname.vercel-dns.com` after removing the custom domain). The previous VPS schedule is gone and nothing here depends on it.
 
 Model provider: TypeSafe AI. AGK Radar is independent and not affiliated with TypeSafe AI. Posts belong to their authors.
